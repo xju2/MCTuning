@@ -1,8 +1,15 @@
 #!/bin/bash
-# This script installs following packages:
+# -----------------------
+# Requirements:
+# gcc, 6.2.0
+# eigen3, 3.2.5
 # python, 2.7.13
 	# pip
 	# numpy, matplotlib, cypython
+# -----------------------
+
+# -----------------------
+# Installs following packages:
 # Pythia, 8.2.35
 	# EvtGen, 01.07.00
 	# FastJet, 3.3.0
@@ -10,19 +17,17 @@
 	# LHAPDF, 6.2.1
 # rivet, 2.6.0
 # Professor, 2.2.2
-	# eigen3, 3.2.5
+# -----------------------
 
 which python
 which gcc
 
-echo "make sure to Python 2.7.13 or higher is installed"
-echo "and numpy, matplotlib, cypython and preferably wxPython"
+EIGEN3_INCLUDE_DIR="/global/homes/x/xju/.local/Cellar/eigen3/include/eigen3"
+CYTHON_DIR="/global/homes/x/xju/.local/Cellar/python/2.7.13/bin/cython"
 
 BASE_DIR=$PWD
 INSTALL_DIR="$BASE_DIR/Extra"
 
-EIGEN3_INCLUDE_DIR="/global/homes/x/xju/.local/Cellar/eigen3/include/eigen3"
-CYTHON_DIR="/global/homes/x/xju/.local/Cellar/python/2.7.13/bin/cython"
 
 ROOT_DIR="/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase/x86_64/root/6.10.04-x86_64-slc6-gcc62-opt"
 PYTHON_DIR="/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase/x86_64/python/2.7.13-x86_64-slc6-gcc62/2.7.13-597a5/x86_64-slc6-gcc62-opt"
