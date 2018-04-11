@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
 
 	// Read in commands from external file.
 	pythia.readFile(argv[1]);
+	pythia.readFile("test.cmnd");
 
 	int nEvent = pythia.mode("Main:numberOfEvents");
 	int nAbort = pythia.mode("Main:timesAllowErrors");

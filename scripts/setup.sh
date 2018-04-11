@@ -11,8 +11,10 @@ function process() {
 #check option and perform setup
 
 if [[ $option == "atlas"  ]]; then
-    source /common/atlas/scripts/setupATLAS.sh
     setupATLAS
+elif [[ $option == "root" ]];then
+	setupATLAS
+	lsetup "root 6.10.04-x86_64-slc6-gcc62-opt"
 elif [[ $option == "rivet" ]]; then
     source /global/homes/x/xju/mctuning/software/rivet/install/local/rivetenv.sh
     echo `which rivet`

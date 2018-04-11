@@ -1,0 +1,95 @@
+{
+	"variables": [
+	{
+		"id_": 0,
+		"name": "SigmaProcess:alphaSvalue",
+		"nickname": "SPalphaS",
+		"description": "The alpha_s value at scale M_Z",
+		"min_": 0.12,
+		"max_": 0.15,
+		"sampling": "Linear"
+	},
+	{
+		"id_": 1,
+		"name": "SpaceShower:pT0Ref",
+		"nickname": "SSpT0Ref",
+		"description": "ISR pT cutoff",
+		"min_": 0.75,
+		"max_": 2.5,
+		"sampling": "Linear"
+	},
+	{
+		"id_": 2,
+		"name": "SpaceShower:pTmax_Fudge",
+		"nickname": "SSpTmax_Fudge",
+		"description": "Mult. factor on max_ ISR evolution scale",
+		"min_": 0.5,
+		"max_": 1.5,
+		"sampling": "Linear"
+	},
+	{
+		"id_": 3,
+		"name": "SpaceShower:pTdampFudge",
+		"nickname": "SSpTdampFudge",
+		"description": "Factorization/renorm scale damping",
+		"min_": 1.0,
+		"max_": 1.5,
+		"sampling": "Linear"
+	},
+	{
+		"id_": 4,
+		"name": "SpaceShower:alphaSvalue",
+		"nickname": "SSalphaSvalue",
+		"description": "ISR alpha_s",
+		"min_": 0.10,
+		"max_": 0.15,
+		"sampling": "Linear"
+	},
+	{
+		"id_": 5,
+		"name": "TimeShower:alphaSvalue",
+		"nickname": "TSalphaSvalue",
+		"description": "FSR alpha_s",
+		"min_": 0.10,
+		"max_": 0.15,
+		"sampling": "Linear"
+	},
+	{
+		"id_": 6,
+		"name": "BeamRemnants:primordialKThard",
+		"nickname": "BRprimordialKThard",
+		"description": "Hard interaction primordial kT",
+		"min_": 1.5,
+		"max_": 2.0,
+		"sampling": "Linear"
+	},
+	{
+		"id_": 7,
+		"name": "MultipartonInteraction:pT0Ref",
+		"nickname": "MPIpT0Ref",
+		"description": "MPI pT cutoff",
+		"min_": 1.5,
+		"max_": 3.0,
+		"sampling": "Linear"
+	},
+	{
+		"id_": 8,
+		"name": "MultipartonInteraction:alphaSvalue",
+		"nickname": "MPIalphaSvalue",
+		"description": "MPI alpha_s",
+		"min_": 0.10,
+		"max_": 0.15,
+		"sampling": "Linear"
+	},
+	{
+		"id_": 9,
+		"name": "BeamRemnants:reconnectRange",
+		"nickname": "BRreconnectRange",
+		"description": "CR strength",
+		"min_": 1.0,
+		"max_": 10.0,
+		"sampling": "Linear"
+	}
+	
+	]
+}
