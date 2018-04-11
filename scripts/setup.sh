@@ -11,7 +11,7 @@ function process() {
 #check option and perform setup
 
 if [[ $option == "atlas"  ]]; then
-    . /common/atlas/scripts/setupATLAS.sh
+    source /common/atlas/scripts/setupATLAS.sh
     setupATLAS
 elif [[ $option == "rivet" ]]; then
     source /global/homes/x/xju/mctuning/software/rivet/install/local/rivetenv.sh
@@ -22,7 +22,6 @@ fi
 
 }
 
-echo $#
 while [ $# -gt 0 ]
 do
     option="$1"
