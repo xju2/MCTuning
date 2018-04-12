@@ -3,7 +3,6 @@
 
 import json
 import sys
-from sets import Set
 
 import math
 
@@ -33,7 +32,7 @@ class Sampling:
         self.current = 0
         self.point_list = []
 
-    def generate(self, npoints, scale):
+    def generate(self, npoints):
         pass
 
     def mid(self):
@@ -51,10 +50,11 @@ class Sampling:
 
 class LinearSampling(Sampling):
 
-    def generate(self, npoints, scale=-1):
-        if scale < 0:
-            scale = max(find_precision(self.max_)[1],
-                        find_precision(self.min_)[1])
+    def generate(self, npoints):
+        scale = max(find_precision(self.max_)[1],
+                    find_precision(self.min_)[1],
+                    find_precision(npoints)[0]
+                   )
 
         self.current = 0
         step = (self.max_ - self.min_)/(npoints - 1)
@@ -97,7 +97,7 @@ class Parameter:
         self.description = description
         self.scale = scale
 
-    def jasonDefault(self):
+    def jsonDefault(self):
         return self.__dict__
 
     def to_str(self):
@@ -129,11 +129,10 @@ class TuneMngr:
     Manage tuned prameters and sampling of these parameters
     """
     def __init__(self):
-        print "TuneMngr"
-        self.para_list = Set([])
+        self.para_list = set([])
 
-    def readInputJason(self, jason_file):
-        data = json.load(open(jason_file))
+    def readInputJason(self, json_file):
+        data = json.load(open(json_file))
         for value in data["variables"]:
             self.para_list.add(Parameter(**value))
 
@@ -143,15 +142,20 @@ class TuneMngr:
             print para
 
     def generate(self, npoints):
+        self.current = 0
         for para in self.para_list:
             para.sampling.generate(npoints)
 
     def fetch(self):
+        self.current += 1
         for para in self.para_list:
             para.value = para.sampling.get()
 
     def get_config(self):
-        return "\n".join([para.for_config() for para in self.para_list])
+        out = "Random:setSeed = on     ! user-set seed\n"
+        out += "Random:seed    = {} \n".format(str(int(self.current*3)))
+        out += "\n".join([para.for_config() for para in self.para_list])
+        return out
 
     def get_tune(self):
         return "\n".join([para.for_tune() for para in self.para_list])
