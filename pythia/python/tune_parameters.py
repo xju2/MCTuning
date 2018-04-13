@@ -157,10 +157,7 @@ class TuneMngr:
             para.value = para.sampling.get()
 
     def get_config(self):
-        out = "Random:setSeed = on     ! user-set seed\n"
-        out += "Random:seed    = {} \n".format(str(int(self.current*3)))
-        out += "\n".join([para.for_config() for para in self.para_list])
-        return out
+        return "\n".join([para.for_config() for para in self.para_list])
 
     def get_tune(self):
         return "\n".join([para.for_tune() for para in self.para_list])

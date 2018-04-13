@@ -2,6 +2,8 @@
 # python 2.7.13
 
 from tune_parameters import TuneMngr
+from tune_parameters import find_precision
+
 import json
 import subprocess
 import sys
@@ -19,8 +21,12 @@ class Jobs:
         data = json.load(open(json_file))
         self.tune = TuneMngr()
         self.tune.readInputJason(data['pythia_parameters'])
+
         self.nRuns = data['nRuns']
+        self.scale = find_precision(self.nRuns)[0]
+
         self.nEventsPerRun = data['nEventsPerRun']
+        self.seed = data['seed']
 
     def submit_all(self):
         self.tune.generate(self.nRuns)
@@ -30,7 +36,7 @@ class Jobs:
             self.submit(iRun)
 
     def workdir(self, irun):
-        folder = 'submit/'+str(irun)
+        folder = 'submit/{:0=6}'.format(irun)
         return os.path.abspath(folder)
 
     def prepare(self, irun):
@@ -49,6 +55,15 @@ class Jobs:
         pythia_config_output = folder+"/tune_parameters.cmnd"
         with open(pythia_config_output, 'w') as f:
             f.write(self.tune.get_config())
+            f.write("\n")
+            # add other global configurations
+            out =  "Random:setSeed           = on     ! user-set seed\n"
+            out += "Random:seed             = {} \n".format(str(int(irun+self.seed*10**self.scale)))
+            out += "Main:numberOfEvents     = {}\n".format(str(self.nEventsPerRun))
+            out += "Main:timesAllowErrors   = {}\n".format(str(max(int(self.nEventsPerRun * 0.002),  1)))
+            # out += "Next:numberCount        = {}\n".format(str(max(int(self.nEventsPerRun * 0.01), 100)))
+            out += "Next:numberCount        = 0  ! disable print\n"
+            f.write(out)
 
         self.submit_folder = folder
         return True
