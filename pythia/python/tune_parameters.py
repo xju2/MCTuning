@@ -23,6 +23,11 @@ def find_precision(number):
     scale = int(math.log10(frac_digits))
     return (magnitude+scale, scale)
 
+def least_runs(n):
+    # n is the number of parameters
+    # return number of coefficient to be fitted
+    return 1 + n + n*(n+1)/2
+
 class Sampling:
     def __init__(self, min_, max_):
         self.min_ = min_
@@ -163,8 +168,17 @@ class TuneMngr:
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print sys.argv[0]," json"
-        sys.exist(1)
+        sys.exit(1)
 
+    print least_runs(1)
+    print least_runs(5)
+    print least_runs(6)
+    print least_runs(10)
+    print least_runs(100)
+    print least_runs(500)
+    print least_runs(1000)
+
+    sys.exit(0)
     tune = TuneMngr()
     tune.readInputJason(sys.argv[1])
     # tune.summary()

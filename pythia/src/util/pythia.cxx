@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <string.h>
 
 using namespace Pythia8;
 using namespace std;
@@ -11,7 +12,7 @@ using namespace std;
 int main(int argc, char** argv) {
 
   // Check that correct number of command-line arguments
-  if (argc != 3) {
+  if (argc < 3) {
     cerr << " Unexpected number of command-line arguments. \n You are"
          << " expected to provide one input and one output file name. \n"
          << " Program stopped! " << endl;
@@ -31,6 +32,7 @@ int main(int argc, char** argv) {
        << " <<< \n >>> HepMC events will be written to file "
        << argv[2] << " <<< \n" << endl;
 
+
 	// Set up pythia to hepmc object
 	HepMC::Pythia8ToHepMC ToHepMC;
 	HepMC::IO_GenEvent ascii_io(argv[2], std::ios::out);
@@ -41,6 +43,20 @@ int main(int argc, char** argv) {
 
 	// Read in commands from external file.
 	pythia.readFile(argv[1]);
+	
+	// check other options
+	const char* tune_file = NULL;
+	for(int i = 3; i < argc; i++){
+		const char* key = strtok(argv[i], "=");
+		const char* val = strtok(NULL, " ");
+		if(strcmp(key, "-t") == 0) tune_file = val;
+	}
+	if(tune_file){
+		cout <<" tunning file: " << tune_file << endl;
+		pythia.readFile(tune_file);
+	}else{
+		cout << "no tunning file" << endl;
+	}
 
 	int nEvent = pythia.mode("Main:numberOfEvents");
 	int nAbort = pythia.mode("Main:timesAllowErrors");
