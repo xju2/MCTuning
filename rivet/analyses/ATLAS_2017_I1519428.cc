@@ -4,6 +4,9 @@
 #include "Rivet/Projections/FastJets.hh"
 #include "Rivet/Tools/BinnedHistogram.hh"
 
+#include "Rivet/Projections/SmearedParticles.hh"
+#include "Rivet/Projections/SmearedJets.hh"
+
 namespace Rivet {
 
 
@@ -13,9 +16,9 @@ namespace Rivet {
   public:
 
     /// Constructor
-    // DEFAULT_RIVET_ANALYSIS_CTOR(ATLAS_2017_I1519428);
+    DEFAULT_RIVET_ANALYSIS_CTOR(ATLAS_2017_I1519428);
 
-	ATLAS_2017_I1519428(): Analysis("ATLAS_2017_I1519428") {}
+	// ATLAS_2017_I1519428(): Analysis("ATLAS_2017_I1519428") {}
 
 
     /// @name Analysis methods
@@ -25,13 +28,16 @@ namespace Rivet {
     void init() {
 
       // Initialise and register projections
-	  const FinalState fs;
-      declare(fs, "FinalState");
+	  const FinalState calofs(Cuts::abseta < 4.9 && Cuts::pT > 100*MeV);
+      declare(calofs, "Clusters");
       // declare(FinalState(Cuts::abseta < 5 && Cuts::pT > 100*MeV), "FS");
 	  
-	  FastJets fj04(fs, FastJets::ANTIKT, 0.4);
-	  fj04.useInvisibles(); // what is this?
-	  declare(fj04, "AntiKT04");
+	  FastJets fj04(calofs, FastJets::ANTIKT, 0.4);
+	  // fj04.useInvisibles(); // what is this?
+	  declare(fj04, "TruthJets");
+
+	  // smearing functions
+	  declare(SmearedJets(fj04, JET_SMEAR_ATLAS_RUN1), "Jets");
 
       // Book histograms
 	  int table_index = 1;
@@ -47,7 +53,7 @@ namespace Rivet {
 
     /// Perform the per-event analysis
     void analyze(const Event& event) {
-		Jets jetCon = apply<FastJets>(event, "AntiKT04").jetsByPt(60*GeV);
+		Jets jetCon = apply<JetAlg>(event, "Jets").jetsByPt(Cuts::pT > 60*GeV);
 
 		// Identify dijets
 		vector<FourMomentum> leadjets;
