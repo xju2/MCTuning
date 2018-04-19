@@ -71,7 +71,7 @@ class Jobs:
     def submit(self, irun):
         # may different from machine to machine
         cmd = ['sbatch', '-p', 'shared-chos',
-               '-t', '10:00:00',
+               '-t', '24:00:00',
                '-D', self.workdir(irun),
                self.exe
               ]
