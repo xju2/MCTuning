@@ -11,6 +11,31 @@ import os
 
 from optparse import OptionParser
 
+def str_to_int(events):
+    evt_type = type(events)
+    if evt_type is int:
+        return events
+    elif evt_type is not unicode and\
+            evt_type is not str:
+        return -1
+    else:
+        events = events.lower()
+
+    if "m" in events:
+        res = events.replace('m', "000000")
+    elif 'k' in events:
+        res = events.replace('k', '000')
+    else:
+        res = events
+
+    try:
+        res = int(res)
+    except ValueError:
+        print events,"is not a good input"
+        res = -1
+
+    return res
+
 class Jobs:
     def __init__(self):
         self.exe = '/global/homes/x/xju/mctuning/software/MCTuning/pythia/python/generate_pythia_events.sh'
@@ -22,18 +47,28 @@ class Jobs:
         self.tune = TuneMngr()
         self.tune.readInputJason(data['pythia_parameters'])
 
-        self.nRuns = data['nRuns']
-        self.scale = find_precision(self.nRuns)[0]
+        self.nRuns = str_to_int(data['nRuns'])
+        # self.scale = find_precision(self.nRuns)[0]
 
-        self.nEventsPerRun = data['nEventsPerRun']
+        self.nEventsPerRun = str_to_int(data['nEventsPerRun'])
         self.seed = data['seed']
 
+        self.nEventsPerJob = str_to_int(data['nEventsPerJob'])
+
     def submit_all(self):
+        if self.nEventsPerJob < 0 or\
+           self.nEventsPerRun < 0:
+            return
+
         self.tune.generate(self.nRuns)
+
+        total_jobs = 0
         for iRun in range(self.nRuns):
             if not self.prepare(iRun):
                 break
-            self.submit(iRun)
+            total_jobs += self.submit(iRun)
+
+        print "Total jobs:", total_jobs
 
     def workdir(self, irun):
         folder = 'submit/{:0=6}'.format(irun)
@@ -58,10 +93,10 @@ class Jobs:
             f.write("\n")
             # add other global configurations
             out =  "Random:setSeed           = on     ! user-set seed\n"
-            out += "Random:seed             = {} \n".format(str(int(irun+self.seed*10**self.scale)))
-            out += "Main:numberOfEvents     = {}\n".format(str(self.nEventsPerRun))
-            out += "Main:timesAllowErrors   = {}\n".format(str(max(int(self.nEventsPerRun * 0.002),  1)))
-            # out += "Next:numberCount        = {}\n".format(str(max(int(self.nEventsPerRun * 0.01), 100)))
+            # out += "Random:seed             = {} \n".format(str(int(irun+self.seed*10**self.scale))) #
+            out += "Main:numberOfEvents     = {}\n".format(str(self.nEventsPerJob))
+            out += "Main:timesAllowErrors   = {}\n".format(str(max(int(self.nEventsPerJob * 0.002),  1)))
+            # out += "Next:numberCount        = {}\n".format(str(max(int(self.nEventsPerJob * 0.01), 100)))
             out += "Next:numberCount        = 0  ! disable print\n"
             f.write(out)
 
@@ -70,15 +105,22 @@ class Jobs:
 
     def submit(self, irun):
         # may different from machine to machine
-        cmd = ['sbatch', '-p', 'shared-chos',
-               '-t', '24:00:00',
-               '-D', self.workdir(irun),
-               self.exe
-              ]
-        if self.no_submit:
-            print cmd
-        else:
-            subprocess.call(cmd)
+        nJobsPerRun = int(self.nEventsPerRun / self.nEventsPerJob)
+        scale = find_precision(nJobsPerRun)[0]
+        for ijob in range(nJobsPerRun):
+            seed = ijob + self.seed*10**scale
+            cmd = ['sbatch', '-p', 'shared-chos',
+                   '-t', '24:00:00',
+                   '-D', self.workdir(irun),
+                   self.exe,
+                   str(seed)
+                  ]
+            if self.no_submit:
+                print cmd
+            else:
+                subprocess.call(cmd)
+
+        return nJobsPerRun
 
 if __name__ == "__main__":
     usage = "%prog [options] json"
