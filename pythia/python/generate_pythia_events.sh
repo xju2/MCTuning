@@ -9,11 +9,12 @@ para="tune_parameters_${seed}.cmnd"
 cp tune_parameters.cmnd $para
 echo "Random:seed = ${seed}" >> $para
 
-mkfifo my_fifo_${seed}
-pythia /global/homes/x/xju/mctuning/software/MCTuning/pythia/data/ATLAS_2014_I1268975.cmnd my_fifo -t=${para} &
-rivet --analysis=ATLAS_2014_I1268975 my_fifo_${seed} -o out_${seed}.yoda
+fifoFile="my_fifo_${seed}"
+mkfifo $fifoFile
+pythia /global/homes/x/xju/mctuning/software/MCTuning/pythia/data/ATLAS_2014_I1268975.cmnd ${fifoFile} -t=${para} &
+rivet --analysis=ATLAS_2014_I1268975 -o out_${seed}.yoda ${fifoFile}
 
-rm my_fifo_${seed}
+rm $fifoFile
 
 #yoda2aida Rivet.yoda out.aida
 echo "DONE"
