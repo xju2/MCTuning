@@ -1,0 +1,9 @@
+{
+	"pythia_process": "/global/homes/x/xju/mctuning/software/MCTuning/pythia/data/ATLAS_2017_I1519428.cmnd",
+	"nRuns": 5,
+	"nEventsPerRun": "10M",
+	"nEventsPerJob": "50k",
+	"seed": 3,
+	"rivet_analysis": "ATLAS_2017_I1519428",
+	"pythia_parameters": "parameters.json"
+}

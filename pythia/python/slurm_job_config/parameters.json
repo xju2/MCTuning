@@ -1,0 +1,13 @@
+{
+	"variables": [
+	{
+		"id_": 0,
+		"name": "SigmaProcess:alphaSvalue",
+		"nickname": "SPalphaS",
+		"description": "The alpha_s value at scale M_Z",
+		"min_": 0.12,
+		"max_": 0.15,
+		"sampling": "Linear"
+	}
+	]
+}

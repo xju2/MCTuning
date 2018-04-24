@@ -55,7 +55,7 @@ class Jobs:
 
         self.nEventsPerJob = str_to_int(data['nEventsPerJob'])
 
-        self.anaID = data['analysis']
+        self.anaID = data['rivet_analysis']
         self.process = data['pythia_process']
 
     def submit_all(self):
