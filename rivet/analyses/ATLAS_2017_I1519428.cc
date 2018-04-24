@@ -41,7 +41,7 @@ namespace Rivet {
 
       // Book histograms
 	  int table_index = 1;
-      // _h_mass1 = bookHisto1D(1, 1, 1); // mjj with ystar < 0.6
+      _h_mass1 = bookHisto1D(table_index++, 1, 1); // mjj with ystar < 0.6
       _h_mass2 = bookHisto1D(table_index++, 1, 1); // mjj with ystar < 1.20
 
 	  double mjjBins[] = {3.4, 3.7, 4.0, 4.3, 4.6, 4.9, 5.4, 15};
@@ -77,7 +77,7 @@ namespace Rivet {
 		const double  m = (leadjets[0] + leadjets[1]).mass();
 		const double chi = exp(2*ystar);
 
-		// if(ystar < 0.6) _h_mass1->fill(m/TeV, event.weight()); // The Data not provided in HepData
+		if(ystar < 0.6) _h_mass1->fill(m/TeV, event.weight()); // The Data not provided in HepData
 		if(ystar < 1.2) _h_mass2->fill(m/TeV, event.weight());
 
 		// chi
@@ -91,6 +91,7 @@ namespace Rivet {
     void finalize() {
 
       // normalize(_h_YYYY); // normalize to unity
+      scale(_h_mass1, crossSection()/picobarn/sumOfWeights()); // norm to cross section
       scale(_h_mass2, crossSection()/picobarn/sumOfWeights()); // norm to cross section
       _chi2.scale(crossSectionPerEvent()/picobarn, this); // Normalise histograms to cross section
 

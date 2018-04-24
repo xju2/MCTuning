@@ -37,8 +37,9 @@ def str_to_int(events):
     return res
 
 class Jobs:
-    def __init__(self):
+    def __init__(self, anaID):
         self.exe = '/global/homes/x/xju/mctuning/software/MCTuning/pythia/python/generate_pythia_events.sh'
+        self.anaID = anaID # analysis ID
         self.no_submit = True;
         pass
 
@@ -113,7 +114,8 @@ class Jobs:
                    '-t', '24:00:00',
                    '-D', self.workdir(irun),
                    self.exe,
-                   str(seed)
+                   str(seed),
+                   str(self.anaID)
                   ]
             if self.no_submit:
                 print cmd
@@ -122,19 +124,24 @@ class Jobs:
 
         return nJobsPerRun
 
+def list_analysis():
+    return ["ATLAS_2014_I1268975", "ATLAS_2017_I1519428"]
+
 if __name__ == "__main__":
     usage = "%prog [options] json"
     version="%prog 1.0"
     parser = OptionParser(usage=usage, description="submit jobs to generate MC events", version=version)
     parser.add_option("-s", "--submit", default=False, action="store_true", help="submit the job")
+    parser.add_option("-a", "--anaID", default="ATLAS_2014_I1268975", help="chose an analysis")
 
     (options,args) = parser.parse_args()
 
     if len(args) < 1:
         parser.print_help()
+        print "supported analysis:\t", list_analysis()
         exit(1)
 
-    jobs = Jobs()
+    jobs = Jobs(options.anaID)
     jobs.readInputJason(args[0])
 
     if options.submit:
