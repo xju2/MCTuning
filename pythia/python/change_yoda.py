@@ -4,13 +4,10 @@
 
 import yoda
 import sys
+import re
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print sys.argv[0],"data.yoda newdata.yoda"
-        exit(1)
-
-    data = yoda.read(sys.argv[1])
+def ATLAS_2014_I1268975(in_file, out_file):
+    data = yoda.read(in_file)
     new_data = []
     pre_fix = '/REF/ATLAS_2014_I1268975'
     for i in range(2):
@@ -29,4 +26,35 @@ if __name__ == "__main__":
             scatter2D.setAnnotation('Path', index)
             new_data.append(scatter2D)
 
-    yoda.write(new_data, sys.argv[2])
+    yoda.write(new_data, out_file)
+
+def ATLAS_2017_I1519428(in_file, out_file):
+    """
+    Downloaded table:
+        1. change indexes [0-8] to [1-9]
+        2. provide another output that contains data only i.e. y01
+    """
+    data = yoda.read(in_file)
+    new_rivet = []
+    new_ref = []
+    for key, value in data.iteritems():
+
+        # change Key
+        index = int(re.search('d0(.+?)-x', key).group(1))
+        new_key = key.replace('d0{}'.format(index), 'd0{}'.format(index+1))
+        value.setAnnotation('Path', new_key)
+
+        new_rivet.append(value)
+
+        if "y01" in key:
+            new_ref.append(value)
+
+    yoda.write(new_rivet, out_file)
+    yoda.write(new_ref, "ATLAS_2017_I1519428_ref.yoda")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print sys.argv[0],"data.yoda newdata.yoda"
+        exit(1)
+
+    ATLAS_2017_I1519428(*sys.argv[1:])
