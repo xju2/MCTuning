@@ -57,6 +57,7 @@ class Jobs:
 
         self.anaID = data['rivet_analysis']
         self.process = data['pythia_process']
+        self.js = json_file
 
     def submit_all(self):
         if self.nEventsPerJob < 0 or\
@@ -72,6 +73,8 @@ class Jobs:
             total_jobs += self.submit(iRun)
 
         print "Total jobs:", total_jobs
+        if self.no_submit:
+            print "To submit:\nsubmit.py -s", self.js
 
     def workdir(self, irun):
         folder = 'submit/{:0=6}'.format(irun)
