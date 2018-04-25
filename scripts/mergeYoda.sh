@@ -10,6 +10,10 @@ do
 	echo $DIR
 	cd $DIR
 	yodamerge -o combined.yoda out_*yoda
+
 	rm out_*yoda
+	rm slurm*out
+	rm tune_parameters_*
+
 	cd ..
 done

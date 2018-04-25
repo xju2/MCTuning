@@ -7,6 +7,8 @@
 #include "Rivet/Projections/SmearedParticles.hh"
 #include "Rivet/Projections/SmearedJets.hh"
 
+#include <stdio.h>
+
 namespace Rivet {
 
 
@@ -53,13 +55,40 @@ namespace Rivet {
 
     /// Perform the per-event analysis
     void analyze(const Event& event) {
-		Jets jetCon = apply<JetAlg>(event, "Jets").jetsByPt(Cuts::pT > 60*GeV);
+
+		const double LEADING_JET_PT_CUT = 440*GeV;
+		/***
+		// check truthJets
+		Jets truthJets = apply<FastJets>(event, "TruthJets").jetsByPt(Cuts::pT > 60*GeV);
+		// Identify dijets in truth-level
+		vector<FourMomentum> lead_truthjets;
+		foreach (const Jet& jet, truthJets) {
+			if (jet.absrap() < 3.0 && lead_truthjets.size() < 2) {
+				if (lead_truthjets.empty() && jet.pT() < LEADING_JET_PT_CUT) continue;
+				lead_truthjets.push_back(jet.momentum());
+			}
+		}
+	
+		// make sure we have a leading jet with pT > 440 GeV and a second to leading jet with pT > 60 GeV.
+		if(lead_truthjets.size() < 2) {
+			// MSG_DEBUG("Could not find two suitable leading jets");
+			// MSG_INFO("Could not find two suitable truth leading jets");
+			return;	
+		} else {
+			char buffer[256];
+			double m = (lead_truthjets[0] + lead_truthjets[1]).mass();
+			sprintf(buffer, "two leading TRUTH jets with pT %.2f, %.2f, %.2f", lead_truthjets[0].pt(), lead_truthjets[1].pt(), m);
+			MSG_INFO(buffer);
+		}
+		**/
 
 		// Identify dijets
+		Jets jetCon = apply<JetAlg>(event, "Jets").jetsByPt(Cuts::pT > 60*GeV);
+
 		vector<FourMomentum> leadjets;
 		foreach (const Jet& jet, jetCon) {
 			if (jet.absrap() < 3.0 && leadjets.size() < 2) {
-				if (leadjets.empty() && jet.pT() < 440*GeV) continue;
+				if (leadjets.empty() && jet.pT() < LEADING_JET_PT_CUT) continue;
 				leadjets.push_back(jet.momentum());
 			}
 		}
@@ -67,8 +96,14 @@ namespace Rivet {
 		// make sure we have a leading jet with pT > 440 GeV and a second to leading jet with pT > 60 GeV.
 		if(leadjets.size() < 2) {
 			MSG_DEBUG("Could not find two suitable leading jets");
+			// MSG_INFO("Could not find two suitable leading jets");
 			return;	
-		}
+		} /*else {
+			char buffer[256];
+			double m = (leadjets[0] + leadjets[1]).mass();
+			sprintf(buffer, "two leading SMEARED jets with pT %.2f, %.2f, %.2f", leadjets[0].pt(), leadjets[1].pt(), m);
+			MSG_INFO(buffer);
+		}*/
 	
 		const double y1 = leadjets[0].rapidity();
 		const double y2 = leadjets[1].rapidity();
@@ -77,7 +112,7 @@ namespace Rivet {
 		const double  m = (leadjets[0] + leadjets[1]).mass();
 		const double chi = exp(2*ystar);
 
-		if(ystar < 0.6) _h_mass1->fill(m/TeV, event.weight()); // The Data not provided in HepData
+		if(ystar < 0.6) _h_mass1->fill(m/TeV, event.weight());
 		if(ystar < 1.2) _h_mass2->fill(m/TeV, event.weight());
 
 		// chi
