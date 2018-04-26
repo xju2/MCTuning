@@ -83,11 +83,12 @@ namespace Rivet {
 		**/
 
 		// Identify dijets
-		Jets jetCon = apply<JetAlg>(event, "Jets").jetsByPt(Cuts::pT > 60*GeV);
+		// Jets jetCon = apply<JetAlg>(event, "Jets").jetsByPt(Cuts::pT > 60*GeV);
+		Jets jetCon = apply<FastJets>(event, "TruthJets").jetsByPt(Cuts::pT > 60*GeV);
 
 		vector<FourMomentum> leadjets;
 		foreach (const Jet& jet, jetCon) {
-			if (jet.absrap() < 3.0 && leadjets.size() < 2) {
+			if (leadjets.size() < 2) {
 				if (leadjets.empty() && jet.pT() < LEADING_JET_PT_CUT) continue;
 				leadjets.push_back(jet.momentum());
 			}
