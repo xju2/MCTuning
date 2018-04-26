@@ -56,7 +56,7 @@ echo "----------sens----------"
 }
 function tune(){
 echo "----------tune----------"
-	prof2-tune -d ref -r mc -s 1 $OPT ipol.dat
+	prof2-tune -d ref -r mc -s 1 --filter $OPT ipol.dat
 echo "----------tune----------"
 }
 

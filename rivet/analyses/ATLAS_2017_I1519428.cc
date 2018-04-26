@@ -129,7 +129,10 @@ namespace Rivet {
       // normalize(_h_YYYY); // normalize to unity
       scale(_h_mass1, crossSection()/picobarn/sumOfWeights()); // norm to cross section
       scale(_h_mass2, crossSection()/picobarn/sumOfWeights()); // norm to cross section
-      _chi2.scale(crossSectionPerEvent()/picobarn, this); // Normalise histograms to cross section
+	  // Normalise histograms to cross section
+	  // But HEP data normalized to unity!
+      _chi2.scale(crossSectionPerEvent()/picobarn, this); 
+      // _chi2.scale(1., this); // Normalise to unity
 
     }
 

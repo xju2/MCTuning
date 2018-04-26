@@ -5,6 +5,7 @@
 import yoda
 import sys
 import re
+import math
 
 def ATLAS_2014_I1268975(in_file, out_file):
     data = yoda.read(in_file)
@@ -36,7 +37,8 @@ def ATLAS_2017_I1519428(in_file, out_file):
         3. divide luminosity, lumi = 37 fb^{-1} = 37 x 10^{12} mb^{-1}.
     """
     data = yoda.read(in_file)
-    lumi = 3.7e13
+    lumi = 3.7e4 # in unit of 1/pb
+    lumi_err = 0.032*lumi
     new_rivet = []
     new_ref = []
     for key, value in data.iteritems():
@@ -47,6 +49,19 @@ def ATLAS_2017_I1519428(in_file, out_file):
         value.setAnnotation('Path', new_key)
 
         # scale each bin
+        for point in value.points:
+            if abs(point.yErrs.minus) < 1E-5:
+                # if origin error is zero, use poisson error
+                y_err = math.sqrt(point.y)
+                if abs(point.y) < 1E-5:
+                    xs_err = 0.
+                else:
+                    xs_err = point.y/lumi * math.sqrt(1/point.y + lumi_err**2/lumi**2)
+                point.yErrs = (xs_err, xs_err)
+            else:
+                point.yErrs = (point.yErrs.minus/lumi, point.yErrs.plus/lumi)
+
+            point.y = point.y / lumi
 
         new_rivet.append(value)
 
