@@ -61,3 +61,8 @@ Random:seed	= 10		! BeChanged
 PDF:pSet = 13 			! NNPDF2.3 QCD+QED LO alpha_s(M_Z) = 0.130. Will be used everywhere 
 #PDF:useHard = off 		! PDF used only for hard process
 #PDF:pHardSet = 13
+
+! 8) Turn-on biased selection
+PhaseSpace:bias2Selection = on
+PhaseSpace:bias2SelectionPow = 4.0 ! as used in example, but ATLAS DSID:304784 uses 5.0
+PhaseSpace:bias2SelectionRef = 100. ! to giet "resonably-sized" weights
