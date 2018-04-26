@@ -103,7 +103,7 @@ class Jobs:
             out += "Main:numberOfEvents     = {}\n".format(str(self.nEventsPerJob))
             out += "Main:timesAllowErrors   = {}\n".format(str(max(int(self.nEventsPerJob * 0.002),  1)))
             # out += "Next:numberCount        = {}\n".format(str(max(int(self.nEventsPerJob * 0.01), 100)))
-            out += "Next:numberCount        = 0  ! disable print\n"
+            out += "Next:numberCount        = 10000  ! \n"
             f.write(out)
 
         self.submit_folder = folder

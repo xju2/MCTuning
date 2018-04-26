@@ -33,8 +33,10 @@ def ATLAS_2017_I1519428(in_file, out_file):
     Downloaded table:
         1. change indexes [0-8] to [1-9]
         2. provide another output that contains data only i.e. y01
+        3. divide luminosity, lumi = 37 fb^{-1} = 37 x 10^{12} mb^{-1}.
     """
     data = yoda.read(in_file)
+    lumi = 3.7e13
     new_rivet = []
     new_ref = []
     for key, value in data.iteritems():
@@ -43,6 +45,8 @@ def ATLAS_2017_I1519428(in_file, out_file):
         index = int(re.search('d0(.+?)-x', key).group(1))
         new_key = key.replace('d0{}'.format(index), 'd0{}'.format(index+1))
         value.setAnnotation('Path', new_key)
+
+        # scale each bin
 
         new_rivet.append(value)
 
