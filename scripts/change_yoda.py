@@ -50,6 +50,7 @@ def ATLAS_2017_I1519428(in_file, out_file):
 
         # scale each bin
         for point in value.points:
+            bin_width = point.xErrs.minus + point.xErrs.plus
             if abs(point.yErrs.minus) < 1E-5:
                 # if origin error is zero, use poisson error
                 y_err = math.sqrt(point.y)
@@ -57,11 +58,13 @@ def ATLAS_2017_I1519428(in_file, out_file):
                     xs_err = 0.
                 else:
                     xs_err = point.y/lumi * math.sqrt(1/point.y + lumi_err**2/lumi**2)
+
+                xs_err /= bin_width
                 point.yErrs = (xs_err, xs_err)
             else:
                 point.yErrs = (point.yErrs.minus/lumi, point.yErrs.plus/lumi)
 
-            point.y = point.y / lumi
+            point.y = point.y / lumi / bin_width
 
         new_rivet.append(value)
 
