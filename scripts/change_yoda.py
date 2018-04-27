@@ -48,23 +48,35 @@ def ATLAS_2017_I1519428(in_file, out_file):
         new_key = key.replace('d0{}'.format(index), 'd0{}'.format(index+1))
         value.setAnnotation('Path', new_key)
 
-        # scale each bin
-        for point in value.points:
-            bin_width = point.xErrs.minus + point.xErrs.plus
-            if abs(point.yErrs.minus) < 1E-5:
-                # if origin error is zero, use poisson error
-                y_err = math.sqrt(point.y)
-                if abs(point.y) < 1E-5:
-                    xs_err = 0.
+        if index < 2:
+            # scale to cross section of di-jet distributions
+
+            # scale each bin only for 
+            for point in value.points:
+                bin_width = point.xErrs.minus + point.xErrs.plus
+                if abs(point.yErrs.minus) < 1E-5:
+                    # Use poisson error for observed events
+                    y_err = math.sqrt(point.y)
+
+                    # if y-axis is zero, err = 0
+                    # else: error propagation
+                    if abs(point.y) < 1E-5:
+                        xs_err = 0.
+                    else:
+                        xs_err = point.y/lumi * math.sqrt(1/point.y + lumi_err**2/lumi**2)
+
+                    xs_err /= bin_width
+                    point.yErrs = (xs_err, xs_err)
                 else:
-                    xs_err = point.y/lumi * math.sqrt(1/point.y + lumi_err**2/lumi**2)
+                    point.yErrs = (point.yErrs.minus/lumi, point.yErrs.plus/lumi)
 
-                xs_err /= bin_width
-                point.yErrs = (xs_err, xs_err)
-            else:
-                point.yErrs = (point.yErrs.minus/lumi, point.yErrs.plus/lumi)
-
-            point.y = point.y / lumi / bin_width
+                point.y = point.y / lumi / bin_width
+        else:
+            pass
+            # scale bin_width for chi2 distributions
+            #for p in value.points:
+            #    bin_width = p.xErrs.minus + p.xErrs.plus
+            #    p.y = p.y / bin_width
 
         new_rivet.append(value)
 

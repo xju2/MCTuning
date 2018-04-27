@@ -15,10 +15,14 @@ if [ -d $DEST ]; then
 		echo "OK, Do nothing"
 		exit
 	fi
-	mv $DEST ${DEST}_bak
+	if [ -d ${DEST}_bak ]; then
+		rm -rf ${DEST}_bak
+	fi
+
+	mv -v $DEST ${DEST}_bak
 fi
 
-mkdir $DEST
+mkdir -v $DEST
 cp -r envelopes sensitivity_plots $DEST
 
 if [ -d validation ]; then

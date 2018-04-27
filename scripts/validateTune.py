@@ -12,10 +12,13 @@ def compare_yoda(ref, tuned_dict, options=None):
     if len(tuned_dict.values()) < 1:
         return
 
+    if options is None:
+        options = dict()
+
     plotkeys = {
         "xlabel": "",
         "ylabel": "Events / Bin",
-        "logY": True,
+        "logY": options.get('logY', True),
         "title": "validation",
         "ratioylabel": "Tuned / Ref",
         "errorbars": True,
@@ -24,8 +27,6 @@ def compare_yoda(ref, tuned_dict, options=None):
         'ratiogrid': True
     }
 
-    if options is None:
-        options = dict()
 
     tuned = tuned_dict.values()[0]
 
@@ -57,7 +58,11 @@ def compare_yoda(ref, tuned_dict, options=None):
             else:
                 print title," missed tuned data"
 
-        out_name = output_dir+"/validation_"+title+".pdf"
+        if plotkeys.get('logY', False):
+            out_name = output_dir+"/validation_"+title+"_LogY.pdf"
+        else:
+            out_name = output_dir+"/validation_"+title+"_LinearY.pdf"
+
         #yoda.plotting.plot(hists_list, outfile=out_name, plotkeys=plotkeys)
         yoda.plot(hists_list, outfile=out_name, **plotkeys)
 
@@ -83,7 +88,12 @@ if __name__ == "__main__":
         "ref_file": sys.argv[1],
         "tuned_dict_files": {
             label:  sys.argv[2]
+        },
+        "options": {
+            "logY": True
         }
     }
+    compare_yoda_files(**input_dict)
 
+    input_dict["options"]["logY"] = False
     compare_yoda_files(**input_dict)
