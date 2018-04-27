@@ -7,18 +7,13 @@ InspireID: 1519428
 Status: UNVALIDATED
 Authors:
  - Xiangyang Ju<xiangyang.ju@gmail.com>
-#References:
-#- '<Example: Eur.Phys.J. C76 (2016) no.7, 392>'
-#- '<Example: DOI:10.1140/epjc/s10052-016-4184-8>'
-#- '<Example: arXiv:1605.03814>'
-RunInfo: <Describe event types, cuts, and other general generator config tips.>
+
+RunInfo: <Jets are reconstructed by the anti-kT algorithm with R = 0.4. Each event is required to have two leading jets ordered by their transverse momentum passing pT > 400 (60) GeV, respectively.>
 NeedCrossSection: no
-#Beams: <Insert beam pair(s), e.g. [p+, p+] or [[p-, e-], [p-, e+]]>
-#Energies: <Run energies or beam energy pairs in GeV, e.g. [13000] or [[8.0, 3.5]] or [630, 1800]. Order pairs to match "Beams">
+Beams: [p+, p+]
+Energies: [13000] 
 Description:
-  '<A fairly long description, including what is measured
-  and if possible what it is useful for in terms of MC validation
-  and tuning. Use LaTeX for maths like $\pT > 50\;\GeV$.>'
+	'<Dijet events are studied in the proton--proton collision dataset recorded at $\sqrt{s}$ =13~TeV with the ATLAS detector at the Large Hadron Collider in 2015 and 2016, corresponding to integrated luminosities of 3.5 fb$^{−1}$ and 33.5 fb^{−1} respectively. Invariant mass and angular distributions are compared to background predictions and no significant deviation is observed.>'
 BibKey: Aaboud:2017yvp
 BibTeX: '@article{Aaboud:2017yvp,
       author         = "Aaboud, Morad and others",
