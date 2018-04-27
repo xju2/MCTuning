@@ -30,13 +30,14 @@ WFILE="weights.txt"
 
 if [ -f $WFILE ]; then
 	OPT="--wfile=$WFILE"
-else:
+else
 	OPT=" "
 fi
+echo "additional OPT: ${OPT}"
 
 function envelope(){
 echo "----------envelopes----------"
-	prof2-envelopes mc ref -o envelopes --pname=$PARAMS
+	prof2-envelopes mc ref -o envelopes $OPT --pname=$PARAMS
 echo "----------envelopes----------"
 }
 function comb(){
@@ -46,17 +47,17 @@ echo "----------comb----------"
 }
 function ipol(){
 echo "----------ipol----------"
-	prof2-ipol mc --rc=runcombs.dat:0 --pname=$PARAMS
+	prof2-ipol mc --rc=runcombs.dat:0 $OPT --pname=$PARAMS
 echo "----------ipol----------"
 }
 function sens(){
 echo "----------sens----------"
-	prof2-sens ipol.dat -o sensitivity_plots --grad
+	prof2-sens ipol.dat -o sensitivity_plots $OPT --grad
 echo "----------sens----------"
 }
 function tune(){
 echo "----------tune----------"
-	prof2-tune -d ref -r mc -s 1 $OPT ipol.dat
+	prof2-tune -d ref -r mc -s 1 --filter $OPT ipol.dat
 echo "----------tune----------"
 }
 

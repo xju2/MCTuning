@@ -9,6 +9,7 @@ for DIR in *
 do
 	echo $DIR
 	cd $DIR
+	echo "merging: `\ls out_*yoda | wc | awk '{print $1}'` yoda outputs"
 	yodamerge -o combined.yoda out_*yoda
 
 	rm out_*yoda
