@@ -83,8 +83,8 @@ namespace Rivet {
 		**/
 
 		// Identify dijets
-		// Jets jetCon = apply<JetAlg>(event, "Jets").jetsByPt(Cuts::pT > 60*GeV);
-		Jets jetCon = apply<FastJets>(event, "TruthJets").jetsByPt(Cuts::pT > 60*GeV);
+		Jets jetCon = apply<JetAlg>(event, "Jets").jetsByPt(Cuts::pT > 60*GeV);
+		// Jets jetCon = apply<FastJets>(event, "TruthJets").jetsByPt(Cuts::pT > 60*GeV);
 
 		vector<FourMomentum> leadjets;
 		foreach (const Jet& jet, jetCon) {
@@ -131,8 +131,11 @@ namespace Rivet {
       scale(_h_mass2, crossSection()/picobarn/sumOfWeights()); // norm to cross section
 	  // Normalise histograms to cross section
 	  // But HEP data normalized to unity!
-      _chi2.scale(crossSectionPerEvent()/picobarn, this); 
-      // _chi2.scale(1., this); // Normalise to unity
+      // _chi2.scale(crossSectionPerEvent()/picobarn, this); 
+      // _chi2.scale(1./sumOfWeights(), this); // Normalise to unity
+	  foreach (Histo1DPtr hist, _chi2.getHistograms()){
+		  normalize(hist);
+	  }
 
     }
 
