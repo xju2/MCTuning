@@ -57,6 +57,7 @@ class Jobs:
 
         self.anaID = data['rivet_analysis']
         self.process = data['pythia_process']
+        self.pythia_opt = data.get('pythia_options', None)
         self.js = json_file
 
     def submit_all(self):
@@ -95,15 +96,19 @@ class Jobs:
 
         pythia_config_output = folder+"/tune_parameters.cmnd"
         with open(pythia_config_output, 'w') as f:
-            f.write(self.tune.get_config())
-            f.write("\n")
-            # add other global configurations
+            # write global configurations
             out =  "Random:setSeed           = on     ! user-set seed\n"
-            # out += "Random:seed             = {} \n".format(str(int(irun+self.seed*10**self.scale))) #
             out += "Main:numberOfEvents     = {}\n".format(str(self.nEventsPerJob))
             out += "Main:timesAllowErrors   = {}\n".format(str(max(int(self.nEventsPerJob * 0.002),  1)))
-            # out += "Next:numberCount        = {}\n".format(str(max(int(self.nEventsPerJob * 0.01), 100)))
             out += "Next:numberCount        = 10000  ! \n"
+            out += '\n'
+
+            # additional options in jason input
+            if self.pythia_opt:
+                out += '\n'.join(self.pythia_opt)
+                out += '\n'
+
+            out += self.tune.get_config() + '\n'
             f.write(out)
 
         self.submit_folder = folder
