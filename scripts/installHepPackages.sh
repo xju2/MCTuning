@@ -139,7 +139,8 @@ function fastjet()
 	# install
 	tar xzf ${FASTJET_FILE_NAME}.tar.gz; cd  $FASTJET_FILE_NAME
 
-	./configure --prefix=${INSTALL_DIR}/${FASTJET_FILE_NAME} --enable-trackjet --enable-atlascone
+	#./configure --prefix=${INSTALL_DIR}/${FASTJET_FILE_NAME} --enable-trackjet --enable-atlascone
+	./configure --prefix=${INSTALL_DIR}/${FASTJET_FILE_NAME} --enable-allcxxplugins --enable-trackjet
 	make
 	make install
 
@@ -224,6 +225,7 @@ function pythia()
 function rivet()
 {
 	# https://rivet.hepforge.org/trac/wiki/GettingStarted
+	# based on LCG!
 	local VERSION=$1
 	if [ -z $VERSION ]; then
 		VERSION="2.6.0"
@@ -284,6 +286,38 @@ function professor()
 	cd ${BASE_DIR}
 	echo "PROF is installed"
 
+}
+
+# MadGraph5_aMC@NLO 2.6.2
+function madgraph() 
+{
+	VERSION=$1
+	if [ -z $VERSION ];then
+		VERSION="2.6.2"
+	fi
+	echo "Downloading MadGraph --> ${VERSION}"
+
+	MADGRAPH_FILE_NAME="MG5_aMC${VERSION}"
+	local DIR_NAME="MG5_aMC-${VERSION}"
+	local FILENAME="MG5_aMC_v${VERSION}.tar.gz"
+	local URL="https://launchpad.net/mg5amcnlo/2.0/2.6.x/+download/${FILENAME}"
+
+	check ${MADGRAPH_FILE_NAME}
+	if [ "${IsInstalled}" = "True" ]; then
+		echo ${MADGRAPH_FILE_NAME} already installed
+		return;
+	fi
+
+	cd $BASE_DIR
+	mkdir -pv $DIR_NAME; cd $DIR_NAME; download $URL
+
+	# install
+	echo "Installing"
+	tar xzf "${FILENAME}"; cd ${VERSION//\./_}
+
+
+
+	cd ${BASE_DIR}
 }
 
 # install packages one by one...

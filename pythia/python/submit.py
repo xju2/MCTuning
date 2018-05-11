@@ -45,10 +45,12 @@ class Jobs:
     def readInputJason(self, json_file):
         data = json.load(open(json_file))
         self.tune = TuneMngr()
-        self.tune.readInputJason(data['pythia_parameters'])
+        nLeastRuns = self.tune.readInputJason(data['pythia_parameters'])
 
         self.nRuns = str_to_int(data['nRuns'])
-        # self.scale = find_precision(self.nRuns)[0]
+        if self.nRuns < nLeastRuns:
+            print "---Number of runs are not enough!---"
+            return False
 
         self.nEventsPerRun = str_to_int(data['nEventsPerRun'])
         self.seed = data['seed']
@@ -59,6 +61,8 @@ class Jobs:
         self.process = data['pythia_process']
         self.pythia_opt = data.get('pythia_options', None)
         self.js = json_file
+
+        return True
 
     def submit_all(self):
         if self.nEventsPerJob < 0 or\
@@ -152,7 +156,8 @@ if __name__ == "__main__":
         exit(1)
 
     jobs = Jobs()
-    jobs.readInputJason(args[0])
+    if not jobs.readInputJason(args[0]):
+        exit(1)
 
     if options.submit:
         jobs.no_submit = False

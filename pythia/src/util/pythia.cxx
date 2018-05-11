@@ -59,6 +59,9 @@ int main(int argc, char** argv) {
 	}
 
 	int nEvent = pythia.mode("Main:numberOfEvents");
+	if (pythia.mode("Beams:frameType") == 4) {
+		nEvent = 1000000000;
+	}
 	int nAbort = pythia.mode("Main:timesAllowErrors");
 
 	pythia.init();

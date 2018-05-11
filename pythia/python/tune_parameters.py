@@ -35,10 +35,12 @@ class Sampling:
         #self.scale = max(find_precision(self.max_)[1],
         #                 find_precision(self.min_)[1])
         self.current = 0
-        self.point_list = []
 
     def generate(self, npoints):
-        pass
+        """
+        To be implemented in derived classes
+        """
+        self.point_list = []
 
     def mid(self):
         return 0.5*(self.min_ + self.max_)
@@ -83,8 +85,7 @@ class Parameter:
                  sampling="Linear",
                  description="None",
                  id_=-1,
-                 nickname=None,
-                 scale=-1
+                 nickname=None
                 ):
         self.id_ = id_
         self.name = name
@@ -100,7 +101,6 @@ class Parameter:
 
         self.sampling = get_sampling(self, sampling)
         self.description = description
-        self.scale = scale
 
     def jsonDefault(self):
         return self.__dict__
@@ -140,6 +140,8 @@ class TuneMngr:
         data = json.load(open(json_file))
         for value in data["variables"]:
             self.para_list.add(Parameter(**value))
+
+        return least_runs(len(self.para_list))
 
     def summary(self):
         print "Total parameters: {}".format(len(self.para_list))
