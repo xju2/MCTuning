@@ -40,17 +40,19 @@ class Jobs:
     def __init__(self):
         self.exe = '/global/homes/x/xju/mctuning/software/MCTuning/pythia/python/generate_pythia_events.sh'
         self.no_submit = True;
+        self.cmd_txt = ""
         pass
 
     def readInputJason(self, json_file):
         data = json.load(open(json_file))
-        self.tune = TuneMngr()
-        nLeastRuns = self.tune.readInputJason(data['pythia_parameters'])
+        self.tune = TuneMngr(data['pythia_parameters'])
 
-        self.nRuns = str_to_int(data['nRuns'])
-        if self.nRuns < nLeastRuns:
-            print "---Number of runs are not enough!---"
-            return False
+        # self.nRuns = str_to_int(data['nRuns'])
+        self.nRuns = self.tune.generate()[0]
+        print "total runs:", self.nRuns
+        print "minimum for Professor:", self.tune.minimum_runs_for_Prof()
+        if self.nRuns < self.tune.minimum_runs_for_Prof():
+            print "!!! Increase the number of parameters' values !!!"
 
         self.nEventsPerRun = str_to_int(data['nEventsPerRun'])
         self.seed = data['seed']
@@ -69,17 +71,26 @@ class Jobs:
            self.nEventsPerRun < 0:
             return
 
-        self.tune.generate(self.nRuns)
-
         total_jobs = 0
         for iRun in range(self.nRuns):
             if not self.prepare(iRun):
                 break
             total_jobs += self.submit(iRun)
 
-        print "Total jobs:", total_jobs
+        print "--------------------"
+        print "Total runs:", self.nRuns
+        print "Total events in each run: {:,}".format(self.nEventsPerRun)
+        print "Events per Job: {:,}".format(self.nEventsPerJob)
+        print "Total jobs: {:,}".format(total_jobs)
+        print "--------------------"
         if self.no_submit:
-            print "To submit:\nsubmit.py -s", self.js
+            print "This is a dry try, jobs are NOT submitted"
+            print "To submit:\tsubmit.py -s", self.js
+            out_cmd_name = "cmd.txt"
+            print "commands are written to", out_cmd_name
+            with open(out_cmd_name, 'w') as f:
+                f.write(self.cmd_txt)
+
 
     def workdir(self, irun):
         folder = 'submit/{:0=6}'.format(irun)
@@ -89,14 +100,9 @@ class Jobs:
         folder = self.workdir(irun)
         subprocess.call(['mkdir', '-p', folder])
 
-        try:
-            self.tune.fetch()
-        except IndexError:
-            return False
-
         tune_output = folder+"/used_params"
         with open(tune_output, 'w') as f:
-            f.write(self.tune.get_tune())
+            f.write(self.tune.get_tune(irun))
 
         pythia_config_output = folder+"/tune_parameters.cmnd"
         with open(pythia_config_output, 'w') as f:
@@ -112,7 +118,7 @@ class Jobs:
                 out += '\n'.join(self.pythia_opt)
                 out += '\n'
 
-            out += self.tune.get_config() + '\n'
+            out += self.tune.get_config(irun) + '\n'
             f.write(out)
 
         self.submit_folder = folder
@@ -133,7 +139,7 @@ class Jobs:
                    str(self.anaID)
                   ]
             if self.no_submit:
-                print cmd
+                self.cmd_txt += " ".join(cmd)
             else:
                 subprocess.call(cmd)
 
@@ -161,7 +167,5 @@ if __name__ == "__main__":
 
     if options.submit:
         jobs.no_submit = False
-    else:
-        print "This is a dry try, jobs are NOT submitted"
 
     jobs.submit_all()

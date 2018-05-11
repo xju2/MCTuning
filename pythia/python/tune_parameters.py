@@ -5,6 +5,7 @@ import json
 import sys
 
 import math
+import pandas as pd
 
 def find_precision(number):
     # https://stackoverflow.com/questions/3018758/determine-precision-and-scale-of-particular-number-in-python?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
@@ -28,85 +29,49 @@ def least_runs(n):
     # return number of coefficient to be fitted
     return 1 + n + n*(n+1)/2
 
-class Sampling:
-    def __init__(self, min_, max_):
-        self.min_ = min_
-        self.max_ = max_
-        #self.scale = max(find_precision(self.max_)[1],
-        #                 find_precision(self.min_)[1])
-        self.current = 0
-
-    def generate(self, npoints):
-        """
-        To be implemented in derived classes
-        """
-        self.point_list = []
-
-    def mid(self):
-        return 0.5*(self.min_ + self.max_)
-
-    def get(self):
-        if self.current >= len(self.point_list):
-            raise IndexError("Maximum points: {}, but asking {}.".format(
-                len(self.point_list), self.current)
-            )
-
-        value = self.point_list[self.current]
-        self.current += 1
-        return value
-
-class LinearSampling(Sampling):
-
-    def generate(self, npoints):
-        scale = max(find_precision(self.max_)[1],
-                    find_precision(self.min_)[1],
-                    find_precision(npoints)[0]
-                   )
-
-        self.current = 0
-        step = (self.max_ - self.min_)/(npoints - 1)
-        self.point_list = [round(self.min_ + x*step, scale) for x in range(npoints-1)]
-        self.point_list.append(self.max_)
-
-def get_sampling(para, sampling_type):
-    if sampling_type == "Linear":
-        return LinearSampling(para.min_, para.max_)
-    else:
-        print sampling_type,"is not implemented!"
-        print "Linear will be used"
-        return LinearSampling(para.min_, para.max_)
-
 class Parameter:
     """
     Must contain a unique name,
     id, nickname and description are optional.
     """
     def __init__(self, name,  min_, max_,
-                 sampling="Linear",
+                 nominal,
+                 values, nickname,
                  description="None",
-                 id_=-1,
-                 nickname=None
+                 id_=-1
                 ):
-        self.id_ = id_
         self.name = name
-
-        if nickname is None:
-            self.nickname = self.name
-        else:
-            self.nickname = nickname
-
         self.min_= min_
         self.max_= max_
-        self.value = self.min_
+        self.nominal = nominal
 
-        self.sampling = get_sampling(self, sampling)
+        # get a list of values of this parameter
+        if type(values) is list:
+            self.values = values
+        elif type(values) is int:
+            self.values = self.get_even_values(values)
+        else:
+            print "I don't know values:",values
+            exit(2)
+
+        self.nickname = nickname
         self.description = description
+        self.id_ = id_
+        self.run_values = []
+
+    def get_even_values(self, values):
+        scale = max(find_precision(self.max_)[1],
+                    find_precision(self.min_)[1],
+                    find_precision(values)[0]
+                   ) + 1
+        step = (self.max_ - self.min_)/(values - 1)
+        return [round(self.min_ + x*step, scale) for x in range(values-1)] + [self.max_]
 
     def jsonDefault(self):
         return self.__dict__
 
     def to_str(self):
-        return "{} {}({},{})".format(self.id_, self.name, self.min_, self.max_)
+        return "{} {} ({}, {}, {}), {}".format(self.id_, self.name, self.min_, self.nominal, self.max_, len(self.values))
 
     def __repr__(self):
         return "Parameter {}({},{})".format(self.name, self.min_, self.max_)
@@ -123,51 +88,85 @@ class Parameter:
     def __hash__(self):
             return hash((self.name))
 
-    def for_tune(self):
-        return "{} {}".format(self.nickname, self.value)
+    def prof_config(self, value):
+        return "{} {}".format(self.nickname, value)
 
-    def for_config(self):
-        return "{:<40} = {:<10} \t! {}".format(self.name, self.value, self.description)
+    def pythia_config(self, value):
+        return "{:<40} = {:<10} \t! {}".format(self.name, value, self.description)
 
 class TuneMngr:
     """
     Manage tuned prameters and sampling of these parameters
     """
-    def __init__(self):
+    def __init__(self, json_file):
+        # avoid any duplicated variables from the input
+        # two variables are the same, if they share the
+        # same name
         self.para_list = set([])
-
-    def readInputJason(self, json_file):
         data = json.load(open(json_file))
         for value in data["variables"]:
             self.para_list.add(Parameter(**value))
 
+        self.DOE = data.get("DOE", "Factorial")
+        if self.DOE.lower() != "factorial" and \
+           self.DOE.lower() != "one-to-one":
+            print "I don't know how to do: ", self.DOE
+            print "but it's OK, I will just use Factorial"
+        self.summary()
+
+    def minimum_runs_for_Prof(self):
         return least_runs(len(self.para_list))
 
+    def runs_from_DOE(self):
+        return 1
+
     def summary(self):
-        print "Total parameters: {}".format(len(self.para_list))
+        print "\nBegin of parameter summary"
+        print "  Design of Exp.:", self.DOE
+        print "  Total parameters: {}".format(len(self.para_list))
         for para in sorted(self.para_list, key=lambda para:para.id_):
-            print para
+            print "\t",para
 
-    def generate(self, npoints):
-        self.current = 0
-        for para in self.para_list:
-            para.sampling.generate(npoints)
+        print "End of parameter summary"
 
-    def fetch(self):
-        self.current += 1
-        for para in self.para_list:
-            para.value = para.sampling.get()
+    def append_factors(self, para):
+        new_list = [x for x in self.para_list if x != para]
+        if len(new_list) > 0:
+            para.run_values = para.values*reduce(lambda x, y: x*y, [len(z.values) for z in new_list])
+        else:
+            para.run_values = para.values
 
-    def get_config(self):
-        return "\n".join([para.for_config() for para in self.para_list])
+    def append_one2one(self, para):
+        para.run_values = para.values + [para.nominal]*(self.max_len - len(para.values))
 
-    def get_tune(self):
-        return "\n".join([para.for_tune() for para in self.para_list])
+
+    def generate(self):
+        if self.DOE.lower() == "one-to-one":
+            self.max_len = max([len(para.values) for para in self.para_list])
+            map(self.append_one2one, self.para_list)
+
+        elif self.DOE.lower() == "factorial":
+            map(self.append_factors, self.para_list)
+        else:
+            print "I do nothing."
+
+        data = dict([(para.nickname, para.run_values) for para in self.para_list])
+        self.df = pd.DataFrame(data=data)
+        print "\n****Generated List of Parameters***"
+        print self.df
+        print "\n"
+        return self.df.shape
+
+    def get_config(self, irun):
+        return "\n".join([para.pythia_config(self.df.iloc[irun][ip]) for ip, para in enumerate(self.para_list)])
+
+    def get_tune(self, irun):
+        return "\n".join([para.prof_config(self.df.iloc[irun][ip]) for ip, para in enumerate(self.para_list)])
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print sys.argv[0]," json"
-        sys.exit(1)
+        exit(1)
 
     print least_runs(1)
     print least_runs(5)
@@ -177,24 +176,19 @@ if __name__ == "__main__":
     print least_runs(500)
     print least_runs(1000)
 
-    sys.exit(0)
-    tune = TuneMngr()
-    tune.readInputJason(sys.argv[1])
-    # tune.summary()
-    nruns = 3
-    tune.generate(nruns)
+    #sys.exit(0)
+    tune = TuneMngr(sys.argv[1])
+
+    tune.generate()
     irun = 0
-    while True:
-        irun += 1
-        print "-------",irun,"-------------"
+    while irun < 1:
         try:
-            tune.fetch()
+            print "--------begin config------------"
+            print tune.get_config(irun)
+            print "--------end config------------\n"
+            print "--------begin tune------------"
+            print tune.get_tune(irun)
+            print "--------end tune------------\n"
         except IndexError:
-            print "Index Error, stop!"
             break
-        print "--------begin config------------"
-        print tune.get_config()
-        print "--------end config------------"
-        print "--------begin tune------------"
-        print tune.get_tune()
-        print "--------end tune------------"
+        irun += 1
