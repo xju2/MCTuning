@@ -96,13 +96,35 @@ class Jobs:
         folder = 'submit/{:0=6}'.format(irun)
         return os.path.abspath(folder)
 
-    def prepare(self, irun):
-        folder = self.workdir(irun)
-        subprocess.call(['mkdir', '-p', folder])
+    def get_folder(self, irun):
+        while os.path.exists(self.workdir(irun)):
 
+        return irun
+
+    def prepare(self, irun):
+
+        try:
+            prof_out = self.tune.get_tune(irun)
+            pythia_out = self.tune.get_config(irun)
+        except IndexError:
+            return False
+
+        folder = self.workdir(irun)
+        new_irun = irun
         tune_output = folder+"/used_params"
+        while os.path.exists(folder):
+            with open(tune_output) as f:
+                if prof_out == "".join(f):
+                    print irun," is already in", folder
+                    return False
+
+            new_irun += 1
+            folder = self.workdir(new_irun)
+            tune_output = folder+"/used_params"
+
+        subprocess.call(['mkdir', '-p', folder])
         with open(tune_output, 'w') as f:
-            f.write(self.tune.get_tune(irun))
+            f.write(prof_out)
 
         pythia_config_output = folder+"/tune_parameters.cmnd"
         with open(pythia_config_output, 'w') as f:
@@ -118,7 +140,7 @@ class Jobs:
                 out += '\n'.join(self.pythia_opt)
                 out += '\n'
 
-            out += self.tune.get_config(irun) + '\n'
+            out += pythia_out + '\n'
             f.write(out)
 
         self.submit_folder = folder
