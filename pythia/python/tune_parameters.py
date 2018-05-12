@@ -107,7 +107,7 @@ class TuneMngr:
         for value in data["variables"]:
             self.para_list.add(Parameter(**value))
 
-        self.DOE = data.get("DOE", "Factorial")
+        self.DOE = data.get("DOE", "one-to-one")
         if self.DOE.lower() != "factorial" and \
            self.DOE.lower() != "one-to-one":
             print "I don't know how to do: ", self.DOE

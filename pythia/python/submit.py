@@ -8,6 +8,7 @@ import json
 import subprocess
 import sys
 import os
+import glob
 
 from optparse import OptionParser
 
@@ -96,11 +97,6 @@ class Jobs:
         folder = 'submit/{:0=6}'.format(irun)
         return os.path.abspath(folder)
 
-    def get_folder(self, irun):
-        while os.path.exists(self.workdir(irun)):
-
-        return irun
-
     def prepare(self, irun):
 
         try:
@@ -115,8 +111,11 @@ class Jobs:
         while os.path.exists(folder):
             with open(tune_output) as f:
                 if prof_out == "".join(f):
-                    print irun," is already in", folder
-                    return False
+                    if len(glob.glob(folder+"*.yoda")) > 0:
+                        print irun," is already in", folder
+                        return False
+                    else:
+                        break
 
             new_irun += 1
             folder = self.workdir(new_irun)
@@ -152,9 +151,20 @@ class Jobs:
         scale = find_precision(nJobsPerRun)[0]
         for ijob in range(nJobsPerRun):
             seed = ijob + self.seed*10**scale
-            cmd = ['sbatch', '-p', 'shared-chos',
-                   '-t', '24:00:00',
-                   '-D', self.workdir(irun),
+            cmd = ['sbatch']
+            host = os.getenv("NERSC_HOST")
+            if host == "cori":
+                cmd += ['-N', "2",
+                        '-C', 'haswell',
+                        '-q', 'regular',
+                        '-L', 'project'
+                       ]
+            elif host == "pdsf":
+                cmd += ['-p', 'shared-chos']
+            else:
+                pass
+            cmd += ['-t', '24:00:00',
+                   '-D', self.submit_folder,
                    self.exe,
                    str(seed),
                    str(self.process),
@@ -162,6 +172,7 @@ class Jobs:
                   ]
             if self.no_submit:
                 self.cmd_txt += " ".join(cmd)
+                self.cmd_txt +=  "\n"
             else:
                 subprocess.call(cmd)
 

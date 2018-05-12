@@ -1,6 +1,6 @@
 #!/bin/bash
 echo $PWD
-which root
+which gcc 
 which rivet
 
 if [ $# -lt 3 ]; then
