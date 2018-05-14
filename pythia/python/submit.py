@@ -109,13 +109,16 @@ class Jobs:
         new_irun = irun
         tune_output = folder+"/used_params"
         while os.path.exists(folder):
-            with open(tune_output) as f:
-                if prof_out == "".join(f):
-                    if len(glob.glob(folder+"*.yoda")) > 0:
-                        print irun," is already in", folder
-                        return False
-                    else:
-                        break
+            try:
+                with open(tune_output) as f:
+                    if prof_out == "".join(f):
+                        if len(glob.glob(folder+"*.yoda")) > 0:
+                            print irun," is already in", folder
+                            return False
+                        else:
+                            break
+            except IOError:
+                break
 
             new_irun += 1
             folder = self.workdir(new_irun)
