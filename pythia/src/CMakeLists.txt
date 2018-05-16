@@ -38,14 +38,32 @@ include_directories(/global/homes/x/xju/mctuning/software/HepMC/hepmc2-install/i
 link_directories(/global/homes/x/xju/mctuning/software/pythia8.2/pythia8.2-install/lib)
 link_directories(/global/homes/x/xju/mctuning/software/HepMC/hepmc2-install/lib)
 
-# add executables
-file(GLOB tools util/*.cxx)
-foreach(target ${tools})
-	get_filename_component(execname ${target} NAME_WE)
-	get_filename_component(srcfile ${target} NAME)
-	add_executable(${execname} util/${srcfile})
-	# add_dependencies(${execname} WaferProb)
-	set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
-
-	target_link_libraries(${execname} pythia8 HepMC)
+# 
+list(APPEND libs jsoncpp)
+foreach(lib ${libs})
+	include_directories(lib${lib}/include)
+	file(GLOB SrcFiles lib${lib}/*.c*)
+	list(APPEND LibSrcFiles ${SrcFiles})
 endforeach()
+
+add_library(PythiaGen STATIC ${LibSrcFiles}) 
+
+# add executables
+add_executable(pythia util/pythia.cxx)
+set_target_properties(pythia PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(pythia pythia8 HepMC)
+
+add_executable(testJson util/testJson.cxx)
+set_target_properties(testJson PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(testJson PythiaGen)
+
+#file(GLOB tools util/*.cxx)
+#foreach(target ${tools})
+#	get_filename_component(execname ${target} NAME_WE)
+#	get_filename_component(srcfile ${target} NAME)
+#	add_executable(${execname} util/${srcfile})
+#	# add_dependencies(${execname} WaferProb)
+#	set_target_properties(${execname} PROPERTIES LINKER_LANGUAGE CXX)
+#
+#	target_link_libraries(${execname} pythia8 HepMC)
+#endforeach()
