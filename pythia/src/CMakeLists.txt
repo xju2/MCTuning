@@ -1,13 +1,3 @@
-cmake_minimum_required (VERSION 2.6)
-project (PythiaGen)
-# The version number
-set (PythiaGen_VERSION_MAJOR 1)
-set (PythiaGen_VERSION_MINOR 0)
-
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
 # if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 # 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8) 
 # 		message(STATUS "CXX Version:" ${CMAKE_CXX_COMPILER_VERSION})
@@ -31,31 +21,14 @@ add_compile_options(-Wfatal-errors)
 add_compile_options(-Wno-deprecated)
 add_compile_options(-std=c++11)
 
-# add pythia path
-include_directories(/global/homes/x/xju/mctuning/software/pythia8.2/pythia8.2-install/include)
-include_directories(/global/homes/x/xju/mctuning/software/HepMC/hepmc2-install/include)
-
-link_directories(/global/homes/x/xju/mctuning/software/pythia8.2/pythia8.2-install/lib)
-link_directories(/global/homes/x/xju/mctuning/software/HepMC/hepmc2-install/lib)
-
-# 
-list(APPEND libs jsoncpp)
-foreach(lib ${libs})
-	include_directories(lib${lib}/include)
-	file(GLOB SrcFiles lib${lib}/*.c*)
-	list(APPEND LibSrcFiles ${SrcFiles})
-endforeach()
-
-add_library(PythiaGen STATIC ${LibSrcFiles}) 
-
+add_subdirectory(libjsoncpp)
 # add executables
-add_executable(pythia util/pythia.cxx)
-set_target_properties(pythia PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(pythia pythia8 HepMC)
+add_subdirectory(util)
 
-add_executable(testJson util/testJson.cxx)
-set_target_properties(testJson PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(testJson PythiaGen)
+# tests
+add_subdirectory(test)
+
+
 
 #file(GLOB tools util/*.cxx)
 #foreach(target ${tools})
