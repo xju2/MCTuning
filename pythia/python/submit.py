@@ -48,7 +48,7 @@ class Jobs:
 
     def readInputJason(self, json_file):
         data = json.load(open(json_file))
-        self.tune = TuneMngr(data['pythia_parameters'])
+        self.tune = TuneMngr(data['parameters'])
 
         # self.nRuns = str_to_int(data['nRuns'])
         self.nRuns = self.tune.generate()[0]
