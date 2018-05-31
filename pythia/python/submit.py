@@ -2,7 +2,9 @@
 # python 2.7.13
 
 from tune_parameters import TuneMngr
-from tune_parameters import find_precision
+from utils import find_precision
+
+import yoda
 
 import json
 import subprocess
@@ -65,6 +67,13 @@ class Jobs:
         self.pythia_opt = data.get('pythia_options', None)
         self.js = json_file
 
+        default_cfg = "/global/homes/x/xju/code/MCTuning/pythia/data/atlas_detector_cfg.yoda"
+        detector_cfg = data.get("detector_cfg", default_cfg)
+        print "reading detector configuration: ", detector_cfg
+        self.detector_hist2D = yoda.read(detector_cfg)
+
+        self.tune.update_nickname(self.detector_hist2D)
+
         return True
 
     def submit_all(self):
@@ -98,8 +107,10 @@ class Jobs:
         return os.path.abspath(folder)
 
     def prepare(self, irun):
+        """prepare input files for each job"""
 
         try:
+            detector_out = self.tune.update_detector(irun, self.detector_hist2D)
             prof_out = self.tune.get_tune(irun)
             pythia_out = self.tune.get_config(irun)
         except IndexError:
@@ -144,6 +155,13 @@ class Jobs:
 
             out += pythia_out + '\n'
             f.write(out)
+
+        # for value in self.detector_hist2D.values():
+        #     for ib, b in enumerate(value.bins):
+        #         print ib, b.volume
+        detector_output = folder+"/detector_config.yoda"
+        yoda.write(detector_out, detector_output)
+        del detector_out
 
         self.submit_folder = folder
         return True

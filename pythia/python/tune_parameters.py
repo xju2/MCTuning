@@ -7,92 +7,17 @@ import sys
 import math
 import pandas as pd
 
-def find_precision(number):
-    # https://stackoverflow.com/questions/3018758/determine-precision-and-scale-of-particular-number-in-python?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
-    max_digits = 14
-    int_part = int(number)
-    magnitude = 1 if int_part == 0 else int(math.log10(int_part)) + 1
-    if magnitude >= max_digits:
-        return (magnitude, 0)
+import yoda
 
-    frac_part = abs(number) - int_part
-    multiplier = 10 ** (max_digits - magnitude)
-    frac_digits = multiplier + int(multiplier * frac_part + 0.5)
-    while frac_digits % 10 == 0:
-        frac_digits /= 10
+from parameter import Parameter
 
-    scale = int(math.log10(frac_digits))
-    return (magnitude+scale, scale)
+import pyDOE
+
 
 def least_runs(n):
     # n is the number of parameters
     # return number of coefficient to be fitted
     return 1 + n + n*(n+1)/2
-
-class Parameter:
-    """
-    Must contain a unique name,
-    id, nickname and description are optional.
-    """
-    def __init__(self, name,  min_, max_,
-                 nominal,
-                 values, nickname,
-                 description="None",
-                 id_=-1
-                ):
-        self.name = name
-        self.min_= min_
-        self.max_= max_
-        self.nominal = nominal
-
-        # get a list of values of this parameter
-        if type(values) is list:
-            self.values = values
-        elif type(values) is int:
-            self.values = self.get_even_values(values)
-        else:
-            print "I don't know values:",values
-            exit(2)
-
-        self.nickname = nickname
-        self.description = description
-        self.id_ = id_
-        self.run_values = []
-
-    def get_even_values(self, values):
-        scale = max(find_precision(self.max_)[1],
-                    find_precision(self.min_)[1],
-                    find_precision(values)[0]
-                   ) + 1
-        step = (self.max_ - self.min_)/(values - 1)
-        return [round(self.min_ + x*step, scale) for x in range(values-1)] + [self.max_]
-
-    def jsonDefault(self):
-        return self.__dict__
-
-    def to_str(self):
-        return "{} {} ({}, {}, {}), {}".format(self.id_, self.name, self.min_, self.nominal, self.max_, len(self.values))
-
-    def __repr__(self):
-        return "Parameter {}({},{})".format(self.name, self.min_, self.max_)
-
-    def __str__(self):
-        return self.to_str()
-
-    def __eq__(self, other):
-        return self.name == other.name
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-            return hash((self.name))
-
-    def prof_config(self, value):
-        return "{} {}".format(self.nickname, value)
-
-    def pythia_config(self, value):
-        return "{:<40} = {:<10} \t! {}".format(self.name, value, self.description)
 
 class TuneMngr:
     """
@@ -103,6 +28,7 @@ class TuneMngr:
         # two variables are the same, if they share the
         # same name
         self.para_list = set([])
+
         data = json.load(open(json_file))
         for value in data["variables"]:
             self.para_list.add(Parameter(**value))
@@ -112,6 +38,8 @@ class TuneMngr:
            self.DOE.lower() != "one-to-one":
             print "I don't know how to do: ", self.DOE
             print "but it's OK, I will just use Factorial"
+
+
         self.summary()
 
     def minimum_runs_for_Prof(self):
@@ -130,13 +58,15 @@ class TuneMngr:
         print "End of parameter summary"
 
     def append_factors(self, para):
-        new_list = [x for x in self.para_list if x != para]
         if len(new_list) > 0:
             para.run_values = para.values*reduce(lambda x, y: x*y, [len(z.values) for z in new_list])
         else:
             para.run_values = para.values
 
     def append_one2one(self, para):
+        """use the values provided by the parameter itself.
+        The ones with shorter value-list are filled by their nominal values
+        """
         para.run_values = para.values + [para.nominal]*(self.max_len - len(para.values))
 
 
@@ -146,7 +76,9 @@ class TuneMngr:
             map(self.append_one2one, self.para_list)
 
         elif self.DOE.lower() == "factorial":
-            map(self.append_factors, self.para_list)
+            index_array = pyDOE.fullfact([len(para.values) for para in self.para_list])
+            for ip, para in enumerate(self.para_list):
+                para.run_values = [para.values[int(x)] for x in index_array[:, ip]]
         else:
             print "I do nothing."
 
@@ -158,10 +90,43 @@ class TuneMngr:
         return self.df.shape
 
     def get_config(self, irun):
-        return "\n".join([para.pythia_config(self.df.iloc[irun][ip]) for ip, para in enumerate(self.para_list)])
+        return "\n".join([para.config(self.df.iloc[irun][ip]) for ip, para in enumerate(self.para_list) if para.type_ == "pythia"])
 
     def get_tune(self, irun):
         return "\n".join([para.prof_config(self.df.iloc[irun][ip]) for ip, para in enumerate(self.para_list)])
+
+    def update_nickname(self, detector_hists):
+        for para in self.para_list:
+            if para.type_ == "pythia":
+                continue
+            hist2D = detector_hists.get(para.name, None)
+            if hist2D is not None:
+                bin_2d = hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['phi'])
+                para.nickname = para.nickname+"_bin"+str(bin_2d)
+
+    def update_detector(self, irun, detector_hists):
+        new_hists = {}
+        for key,value in detector_hists.iteritems():
+            new_hists[key] = value.clone()
+
+        for ip, para in enumerate(self.para_list):
+            if para.type_ == "pythia":
+                continue
+
+            hist2D = new_hists.get(para.name, None)
+            if hist2D is not None:
+                bin_2d = hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['phi'])
+                # print "INFO: ",hist2D.bin(bin_2d).volume, hist2D.bin(bin_2d).height
+                hist2D.fillBin(bin_2d, -1*hist2D.bin(bin_2d).volume)
+                hist2D.fillBin(bin_2d, self.df.iloc[irun][ip])
+                # print "After: ",hist2D.bin(bin_2d).volume, hist2D.bin(bin_2d).height
+                # para.nickname = para.nickname+"_bin"+str(bin_2d)
+                # print "bin index: ", hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['phi'])
+                # print "set to: ", self.df.iloc[irun][ip]
+            else:
+                print para.name,"is not in detector configuration"
+
+        return new_hists
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
