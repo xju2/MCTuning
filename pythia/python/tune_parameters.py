@@ -101,7 +101,7 @@ class TuneMngr:
                 continue
             hist2D = detector_hists.get(para.name, None)
             if hist2D is not None:
-                bin_2d = hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['phi'])
+                bin_2d = hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['pT'])
                 para.nickname = para.nickname+"_bin"+str(bin_2d)
 
     def update_detector(self, irun, detector_hists):
@@ -115,13 +115,13 @@ class TuneMngr:
 
             hist2D = new_hists.get(para.name, None)
             if hist2D is not None:
-                bin_2d = hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['phi'])
+                bin_2d = hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['pT'])
                 # print "INFO: ",hist2D.bin(bin_2d).volume, hist2D.bin(bin_2d).height
                 hist2D.fillBin(bin_2d, -1*hist2D.bin(bin_2d).volume)
                 hist2D.fillBin(bin_2d, self.df.iloc[irun][ip])
                 # print "After: ",hist2D.bin(bin_2d).volume, hist2D.bin(bin_2d).height
                 # para.nickname = para.nickname+"_bin"+str(bin_2d)
-                # print "bin index: ", hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['phi'])
+                # print "bin index: ", hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['pT'])
                 # print "set to: ", self.df.iloc[irun][ip]
             else:
                 print para.name,"is not in detector configuration"

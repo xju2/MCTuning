@@ -66,6 +66,7 @@ class Jobs:
         self.process = data['pythia_process']
         self.pythia_opt = data.get('pythia_options', None)
         self.js = json_file
+        self.queue_name = data.get('queue', 'shared')
 
         default_cfg = "/global/homes/x/xju/code/MCTuning/pythia/data/atlas_detector_cfg.yoda"
         detector_cfg = data.get("detector_cfg", default_cfg)
@@ -92,6 +93,7 @@ class Jobs:
         print "Total events in each run: {:,}".format(self.nEventsPerRun)
         print "Events per Job: {:,}".format(self.nEventsPerJob)
         print "Total jobs: {:,}".format(total_jobs)
+        print "Queue to submit: {}".format(self.queue_name)
         print "--------------------"
         if self.no_submit:
             print "This is a dry try, jobs are NOT submitted"
@@ -175,16 +177,18 @@ class Jobs:
             cmd = ['sbatch']
             host = os.getenv("NERSC_HOST")
             if host == "cori":
-                cmd += ['-N', "2",
+                cmd += ['-N', "1",
                         '-C', 'haswell',
-                        '-q', 'regular',
+                        '-q', self.queue_name,
                         '-L', 'project'
                        ]
+                if "shared" == self.queue_name:
+                    cmd += ['-n', '1']
             elif host == "pdsf":
                 cmd += ['-p', 'shared-chos']
             else:
                 pass
-            cmd += ['-t', '24:00:00',
+            cmd += ['-t', '2:00:00',
                    '-D', self.submit_folder,
                    self.exe,
                    str(seed),
