@@ -25,6 +25,8 @@ fi
 mkdir -pv $DEST
 cp -r envelopes sensitivity_plots $DEST
 
+cp tunes/results.txt $DEST
+
 if [ -d validation ]; then
 	cp -r validation $DEST
 fi
