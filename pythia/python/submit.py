@@ -43,6 +43,7 @@ class Jobs:
     def __init__(self):
         self.exe = '/global/homes/x/xju/mctuning/software/MCTuning/pythia/python/generate_pythia_events.sh'
         self.no_submit = True;
+        self.subdir = '.'
         self.cmd_txt = ""
         pass
 
@@ -67,6 +68,7 @@ class Jobs:
         self.pythia_opt = data.get('pythia_options', None)
         self.js = json_file
         self.queue_name = data.get('queue', 'shared')
+        self.time = data.get('time', '1:00:00')
 
         default_cfg = "/global/homes/x/xju/code/MCTuning/pythia/data/atlas_detector_cfg.yoda"
         detector_cfg = data.get("detector_cfg", default_cfg)
@@ -94,18 +96,19 @@ class Jobs:
         print "Events per Job: {:,}".format(self.nEventsPerJob)
         print "Total jobs: {:,}".format(total_jobs)
         print "Queue to submit: {}".format(self.queue_name)
+        print "Time reserved: {}".format(self.time)
         print "--------------------"
         if self.no_submit:
             print "This is a dry try, jobs are NOT submitted"
             print "To submit:\tsubmit.py -s", self.js
-            out_cmd_name = "cmd.txt"
+            out_cmd_name = os.path.join(self.subdir, "cmd.txt")
             print "commands are written to", out_cmd_name
             with open(out_cmd_name, 'w') as f:
                 f.write(self.cmd_txt)
 
 
     def workdir(self, irun):
-        folder = 'submit/{:0=6}'.format(irun)
+        folder = os.path.join(self.subdir, 'submit/{:0=6}'.format(irun))
         return os.path.abspath(folder)
 
     def prepare(self, irun):
@@ -120,7 +123,7 @@ class Jobs:
 
         folder = self.workdir(irun)
         new_irun = irun
-        tune_output = folder+"/used_params"
+        tune_output = os.path.join(folder, "used_params")
         while os.path.exists(folder):
             try:
                 with open(tune_output) as f:
@@ -135,7 +138,7 @@ class Jobs:
 
             new_irun += 1
             folder = self.workdir(new_irun)
-            tune_output = folder+"/used_params"
+            tune_output = os.path.join(folder, "used_params")
 
         subprocess.call(['mkdir', '-p', folder])
         with open(tune_output, 'w') as f:
@@ -177,18 +180,20 @@ class Jobs:
             cmd = ['sbatch']
             host = os.getenv("NERSC_HOST")
             if host == "cori":
-                cmd += ['-N', "1",
+                cmd += [#'-N', "1",
                         '-C', 'haswell',
                         '-q', self.queue_name,
                         '-L', 'project'
                        ]
                 if "shared" == self.queue_name:
                     cmd += ['-n', '1']
+                else:
+                    cmd += ['-N', '1']
             elif host == "pdsf":
                 cmd += ['-p', 'shared-chos']
             else:
                 pass
-            cmd += ['-t', '2:00:00',
+            cmd += ['-t', self.time,
                    '-D', self.submit_folder,
                    self.exe,
                    str(seed),
@@ -204,13 +209,14 @@ class Jobs:
         return nJobsPerRun
 
 def list_analysis():
-    return ["ATLAS_2014_I1268975", "ATLAS_2017_I1519428"]
+    return ["ATLAS_2014_I1268975", "ATLAS_2017_I1519428", "ATLAS_2017_I1635274"]
 
 if __name__ == "__main__":
     usage = "%prog [options] json"
     version="%prog 1.0"
     parser = OptionParser(usage=usage, description="submit jobs to generate MC events", version=version)
     parser.add_option("-s", "--submit", default=False, action="store_true", help="submit the job")
+    parser.add_option("-d", "--subdir", default=".")
 
     (options,args) = parser.parse_args()
 
@@ -220,6 +226,7 @@ if __name__ == "__main__":
         exit(1)
 
     jobs = Jobs()
+    jobs.subdir = options.subdir
     if not jobs.readInputJason(args[0]):
         exit(1)
 

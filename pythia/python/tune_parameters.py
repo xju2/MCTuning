@@ -90,10 +90,11 @@ class TuneMngr:
         return self.df.shape
 
     def get_config(self, irun):
-        return "\n".join([para.config(self.df.iloc[irun][ip]) for ip, para in enumerate(self.para_list) if para.type_ == "pythia"])
+        return "\n".join([para.config(self.df[para.nickname].iloc[irun])\
+                          for para in self.para_list if para.type_ == "pythia"])
 
     def get_tune(self, irun):
-        return "\n".join([para.prof_config(self.df.iloc[irun][ip]) for ip, para in enumerate(self.para_list)])
+        return "\n".join([para.prof_config(self.df[para.nickname].iloc[irun]) for para in self.para_list])
 
     def update_nickname(self, detector_hists):
         for para in self.para_list:
@@ -109,7 +110,7 @@ class TuneMngr:
         for key,value in detector_hists.iteritems():
             new_hists[key] = value.clone()
 
-        for ip, para in enumerate(self.para_list):
+        for para in self.para_list:
             if para.type_ == "pythia":
                 continue
 
@@ -118,11 +119,11 @@ class TuneMngr:
                 bin_2d = hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['pT'])
                 # print "INFO: ",hist2D.bin(bin_2d).volume, hist2D.bin(bin_2d).height
                 hist2D.fillBin(bin_2d, -1*hist2D.bin(bin_2d).volume)
-                hist2D.fillBin(bin_2d, self.df.iloc[irun][ip])
+                hist2D.fillBin(bin_2d, self.df[para.nickname].iloc[irun])
                 # print "After: ",hist2D.bin(bin_2d).volume, hist2D.bin(bin_2d).height
                 # para.nickname = para.nickname+"_bin"+str(bin_2d)
                 # print "bin index: ", hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['pT'])
-                # print "set to: ", self.df.iloc[irun][ip]
+                # print "set to: ", self.df[para.nickname].iloc[irun]
             else:
                 print para.name,"is not in detector configuration"
 

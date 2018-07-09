@@ -46,6 +46,25 @@ public:
 		for (size_t i = 0; i < 6; ++i)
 			_count_EM[i] = bookCounter("count_EM" + toString(i+1));
 
+		for (size_t i = 0; i < 6; i++){
+			_count_Regions[i] = bookCounter("count_Region" + toString(i+1));
+		}
+
+		int table_index = 1;
+		_h_met_wmunu 	= bookHisto1D(table_index++, 1, 1);
+		_h_ljetpT_wmunu = bookHisto1D(table_index++, 1, 1);
+		_h_met_wenu 	= bookHisto1D(table_index++, 1, 1);
+		_h_ljetpT_wenu  = bookHisto1D(table_index++, 1, 1);
+		_h_met_zmumu 	= bookHisto1D(table_index++, 1, 1);
+		_h_ljetpT_zmumu = bookHisto1D(table_index++, 1, 1);
+		_h_met_ttbar 	= bookHisto1D(table_index++, 1, 1);
+		_h_ljetpT_ttbar = bookHisto1D(table_index++, 1, 1);
+
+		_h_met_sr 		= bookHisto1D(table_index++, 1, 1);
+		_h_ljetpT_sr 	= bookHisto1D(table_index++, 1, 1);
+		_h_ljeteta_sr 	= bookHisto1D(table_index++, 1, 1);
+		_h_njets_sr 	= bookHisto1D(table_index++, 1, 1);
+
 	}
 
 
@@ -57,7 +76,7 @@ public:
 		const Particles elecs = apply<ParticleFinder>(event, "Electrons").particlesByPt();
 		const Particles mus = apply<ParticleFinder>(event, "Muons").particlesByPt();
 		MSG_DEBUG("Number of raw jets, electrons, muons = "
-				<< jets.size() << ", " << elecs.size() << ", " << mus.size()) << ", " << signal_jets.size();
+				<< jets.size() << ", " << elecs.size() << ", " << mus.size() << ", " << signal_jets.size());
 
 		// Discard jets very close to electrons, or with low track multiplicity and close to muons
 		const Jets isojets = filter_discard(signal_jets, [&](const Jet& j) {
@@ -88,6 +107,7 @@ public:
 		const double etmiss = vet.perp();
 
 		const double weight = event.weight();
+		if(isojets.empty()) vetoEvent;
 
 		// basic MET, jet pT, number of jets and topological cuts 
 		bool topo_cuts = etmiss > 250*GeV && // met > 250 GeV
@@ -97,12 +117,12 @@ public:
 
 		if(!topo_cuts) vetoEvent;
 
-		int region = -1; //0: signal, 1: Wmunu, 2: Zmumu, 3: Wenu, 4: ttbar, -1: NONE
+		int region_ = -1; //0: signal, 1: Wmunu, 2: Zmumu, 3: Wenu, 4: ttbar, -1: NONE
 
 		//signal regions
 		if ( isoelecs.empty() && isomus.empty())
 		{
-			region = 0;
+			region_ = 0;
 			// Get ETmiss bin number and fill counters
 			const int i_etmiss = binIndex(etmiss/GeV, ETMISS_CUTS);
 			// Inclusive ETmiss bins
@@ -110,34 +130,48 @@ public:
 				if (i_etmiss >= ibin) _count_IM[ibin]->fill(weight);
 			// Exclusive ETmiss bins
 			if (inRange(i_etmiss, 0, 6)) _count_EM[i_etmiss]->fill(weight);
+
+			// Fill histograms
+			_h_met_sr		->fill(etmiss/GeV, weight);
+			_h_ljetpT_sr	->fill(isojets[0].pt()/GeV, weight);
+			_h_ljeteta_sr	->fill(isojets[0].eta(), weight);
+			_h_njets_sr		->fill(isojets.size(), weight);
 		}
 
 		Jets bjets;
 		foreach( const Jet& j, signal_jets) {
 			if( j.bTagged() && 
 				rand()/static_cast<double>(RAND_MAX) < JET_BTAG_ATLAS_RUN1(j)) {
-				bjets.push_bach(j);
+				bjets.push_back(j);
 			}
 		}
 
 		// W -> munu control region
-		if ( isomus.size() == 1 && isoelecs.empty())
+		if (isomus.size() == 1 && isoelecs.empty())
 		{
 			const Particle& muon = isomus.at(0);
-			double mT = sqrt(2* muon.perp() * etmiss * [1 - cos(deltaPhi(muon.phi() - vet.phi())) ]);
+			double mT = sqrt(2* muon.perp() * etmiss * (1 - cos(deltaPhi(muon.phi(), vet.phi())) ));
 			if( mT > 30*GeV && mT < 100*GeV){
-				// TODO: fill histograms
-				;
+				if(bjets.empty()){
+					region_ = 1;
+					_h_met_wmunu	->fill(etmiss/GeV, weight);
+					_h_ljetpT_wmunu	->fill(isojets[0].pt()/GeV, weight);
+				} else {
+					region_ = 4;
+					_h_met_ttbar	->fill(etmiss/GeV, weight);
+					_h_ljetpT_ttbar	->fill(isojets[0].pt()/GeV, weight);
+				}
 			}
 		}
 
 		// Z -> mumu control region
 		if( isomus.size() == 2 && isoelecs.empty())
 		{
-			const double m = (isomus.at(0) + isomus.at(1)).mass();
-			if(mass > 66*GeV && mass < 116*GeV){
-				// TODO: fill histograms
-				;
+			const double m = (isomus[0].momentum() + isomus[1].momentum()).mass();
+			if(m > 66*GeV && m < 116*GeV){
+				region_ = 2;
+				_h_met_zmumu	->fill(etmiss/GeV, weight);
+				_h_ljetpT_zmumu	->fill(isojets[0].pt()/GeV, weight);
 			}
 		}
 
@@ -148,32 +182,62 @@ public:
 			if(ele.pt() > 30*GeV && (ele.eta() <= 1.37 || ele.eta() >= 1.52) )
 			{
 				double HT = 0;
-				foreach(const Particle& j, isojets){
+				foreach(const Jet& j, isojets){
 					HT += j.pT();
 				}
 				double ht_ratio = etmiss/sqrt(HT);
-				double mT = sqrt(2* ele.perp() * etmiss * [1 - cos(deltaPhi(ele.phi() - vet.phi())) ]);
+				double mT = sqrt(2* ele.perp() * etmiss * (1 - cos(deltaPhi(ele.phi(), vet.phi())) ));
 				if( mT > 30*GeV && mT < 100*GeV && ht_ratio > 5){
-					// TODO: fill histograms
-					;
+					region_ = 3;
+					_h_met_wenu		->fill(etmiss/GeV, weight);
+					_h_ljetpT_wenu	->fill(isojets[0].pt()/GeV, weight);
 				}
 			}
 		}
-		
-		region_count[region] += 1;
+		_count_Regions[region_]->fill(weight);
 	}
 
 	/// Normalise histograms etc., after the run
 	void finalize() {
-		const double norm = 3.2*crossSection()/femtobarn;
-		scale(_count_IM, norm/sumOfWeights());
-		scale(_count_EM, norm/sumOfWeights());
+		const double norm = 36.1*crossSection()/femtobarn;
+		scale(_count_IM, 		norm/sumOfWeights());
+		scale(_count_EM, 		norm/sumOfWeights());
+		scale(_count_Regions, 	norm/sumOfWeights());
+
+		scale(_h_met_wmunu, 	norm/sumOfWeights()); // norm to cross section
+		scale(_h_ljetpT_wmunu, 	norm/sumOfWeights()); // norm to cross section
+		scale(_h_met_zmumu, 	norm/sumOfWeights()); // norm to cross section
+		scale(_h_ljetpT_zmumu, 	norm/sumOfWeights()); // norm to cross section
+		scale(_h_met_wenu, 		norm/sumOfWeights()); // norm to cross section
+		scale(_h_ljetpT_wenu, 	norm/sumOfWeights()); // norm to cross section
+		scale(_h_met_ttbar, 	norm/sumOfWeights()); // norm to cross section
+		scale(_h_ljetpT_ttbar, 	norm/sumOfWeights()); // norm to cross section
+
+		scale(_h_met_sr, 		norm/sumOfWeights()); // norm to cross section
+		scale(_h_ljetpT_sr, 	norm/sumOfWeights()); // norm to cross section
+		scale(_h_ljeteta_sr, 	norm/sumOfWeights()); // norm to cross section
+		scale(_h_njets_sr, 		norm/sumOfWeights()); // norm to cross section
 	}
 
 private:
+	Histo1DPtr _h_met_wmunu;
+	Histo1DPtr _h_ljetpT_wmunu;
+	Histo1DPtr _h_met_wenu;
+	Histo1DPtr _h_ljetpT_wenu;
+	Histo1DPtr _h_met_zmumu;
+	Histo1DPtr _h_ljetpT_zmumu;
+	Histo1DPtr _h_met_ttbar;
+	Histo1DPtr _h_ljetpT_ttbar;
+
+	Histo1DPtr _h_met_sr;
+	Histo1DPtr _h_ljetpT_sr;
+	Histo1DPtr _h_ljeteta_sr;
+	Histo1DPtr _h_njets_sr;
+
 	const vector<double> ETMISS_CUTS = {250, 300, 350, 400, 500, 600, 700, 13000};
 	CounterPtr _count_IM[7], _count_EM[6];
-	const double[5] region_count = {0, 0, 0, 0, 0};
+	CounterPtr _count_Regions[6];
+	double region_count[5] = {0, 0, 0, 0, 0};
 };
 
 
