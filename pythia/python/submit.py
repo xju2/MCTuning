@@ -87,7 +87,7 @@ class Jobs:
         total_jobs = 0
         for iRun in range(self.nRuns):
             if not self.prepare(iRun):
-                break
+                continue 
             total_jobs += self.submit(iRun)
 
         print "--------------------"
@@ -137,8 +137,8 @@ class Jobs:
                             return False
                         else:
                             break
-                    else:
-                        print "Professor input is changed"
+                    #else:
+                    #    print "directory is there, but input is changed"
             except IOError:
                 break
 
@@ -146,7 +146,6 @@ class Jobs:
             folder = self.workdir(new_irun)
             tune_output = os.path.join(folder, "used_params")
 
-        exit(1)
         subprocess.call(['mkdir', '-p', folder])
         with open(tune_output, 'w') as f:
             f.write(prof_out)
