@@ -70,6 +70,7 @@ class Jobs:
         self.js = json_file
         self.queue_name = data.get('queue', 'shared')
         self.time = data.get('time', '1:00:00')
+        self.repo = data.get('repo', 'm1029')
 
         default_cfg = "/global/homes/x/xju/code/MCTuning/pythia/data/atlas_detector_cfg.yoda"
         detector_cfg = data.get("detector_cfg", default_cfg)
@@ -201,6 +202,8 @@ class Jobs:
                     cmd += ['-n', '1']
                 else:
                     cmd += ['-N', '1']
+
+                cmd += ['-A', self.repo]
             elif host == "pdsf":
                 cmd += ['-p', 'shared-chos']
             else:
