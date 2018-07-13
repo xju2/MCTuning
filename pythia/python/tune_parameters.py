@@ -85,7 +85,7 @@ class TuneMngr:
         data = dict([(para.nickname, para.run_values) for para in self.para_list])
         self.df = pd.DataFrame(data=data)
         print "\n****Generated List of Parameters***"
-        print self.df
+        print self.df.head()
         print "\n"
         return self.df.shape
 

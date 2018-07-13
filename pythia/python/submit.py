@@ -127,12 +127,18 @@ class Jobs:
         while os.path.exists(folder):
             try:
                 with open(tune_output) as f:
-                    if prof_out == "".join(f):
-                        if len(glob.glob(folder+"*.yoda")) > 0:
-                            print irun," is already in", folder
+                    c = ""
+                    for line in f:
+                        c += line
+
+                    if prof_out == c:
+                        if len(glob.glob(folder+"/*.yoda")) > 0:
+                            print new_irun," is already in", folder
                             return False
                         else:
                             break
+                    else:
+                        print "Professor input is changed"
             except IOError:
                 break
 
@@ -140,6 +146,7 @@ class Jobs:
             folder = self.workdir(new_irun)
             tune_output = os.path.join(folder, "used_params")
 
+        exit(1)
         subprocess.call(['mkdir', '-p', folder])
         with open(tune_output, 'w') as f:
             f.write(prof_out)
