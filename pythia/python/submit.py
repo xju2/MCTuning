@@ -62,6 +62,7 @@ class Jobs:
         self.seed = data['seed']
 
         self.nEventsPerJob = str_to_int(data['nEventsPerJob'])
+        self.nJobsPerRun = int(self.nEventsPerRun / self.nEventsPerJob)
 
         self.anaID = data['rivet_analysis']
         self.process = data['pythia_process']
@@ -85,16 +86,21 @@ class Jobs:
             return
 
         total_jobs = 0
+        finished_jobs = 0
         for iRun in range(self.nRuns):
             if not self.prepare(iRun):
-                continue 
-            total_jobs += self.submit(iRun)
+                finished_jobs += self.nJobsPerRun
+                continue
+            self.submit(iRun)
+            total_jobs += self.nJobsPerRun
 
         print "--------------------"
+        print "Working dir:", os.path.abspath(self.subdir)
         print "Total runs:", self.nRuns
         print "Total events in each run: {:,}".format(self.nEventsPerRun)
         print "Events per Job: {:,}".format(self.nEventsPerJob)
-        print "Total jobs: {:,}".format(total_jobs)
+        print "Total Finished Jobs: {:,}".format(finished_jobs)
+        print "Total jobs to submit: {:,}".format(total_jobs)
         print "Queue to submit: {}".format(self.queue_name)
         print "Time reserved: {}".format(self.time)
         print "--------------------"
@@ -132,8 +138,9 @@ class Jobs:
                         c += line
 
                     if prof_out == c:
-                        if len(glob.glob(folder+"/*.yoda")) > 0:
-                            print new_irun," is already in", folder
+                        n_yodas = len(glob.glob(folder+"/out_*.yoda"))
+                        if n_yodas > 0:
+                            print new_irun," is already in", folder, n_yodas
                             return False
                         else:
                             break
@@ -179,9 +186,8 @@ class Jobs:
 
     def submit(self, irun):
         # may different from machine to machine
-        nJobsPerRun = int(self.nEventsPerRun / self.nEventsPerJob)
-        scale = find_precision(nJobsPerRun)[0]
-        for ijob in range(nJobsPerRun):
+        scale = find_precision(self.nJobsPerRun)[0]
+        for ijob in range(self.nJobsPerRun):
             seed = ijob + self.seed*10**scale
             cmd = ['sbatch']
             host = os.getenv("NERSC_HOST")
@@ -212,10 +218,10 @@ class Jobs:
             else:
                 subprocess.call(cmd)
 
-        return nJobsPerRun
 
 def list_analysis():
     return ["ATLAS_2014_I1268975", "ATLAS_2017_I1519428", "ATLAS_2017_I1635274"]
+
 
 if __name__ == "__main__":
     usage = "%prog [options] json"
