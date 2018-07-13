@@ -140,7 +140,7 @@ class Jobs:
                     if prof_out == c:
                         n_yodas = len(glob.glob(folder+"/out_*.yoda"))
                         if n_yodas > 0:
-                            print new_irun," is already in", folder, n_yodas
+                            # print new_irun," is already in", folder, n_yodas
                             return False
                         else:
                             break
