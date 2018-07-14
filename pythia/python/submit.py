@@ -104,6 +104,7 @@ class Jobs:
         print "Total jobs to submit: {:,}".format(total_jobs)
         print "Queue to submit: {}".format(self.queue_name)
         print "Time reserved: {}".format(self.time)
+        print "Repo to burn: {}".format(self.repo)
         print "--------------------"
         if self.no_submit:
             print "This is a dry try, jobs are NOT submitted"
