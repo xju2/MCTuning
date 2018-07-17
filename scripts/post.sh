@@ -5,7 +5,8 @@ if [ $# -lt 1 ];then
 	exit
 fi
 
-DEST=$1
+baseDEST=/project/projectdirs/atlas/www/xju
+DEST=${baseDEST}/$1
 
 if [ -d $DEST ]; then
 	echo "$DEST is there"

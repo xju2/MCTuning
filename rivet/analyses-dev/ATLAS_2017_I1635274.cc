@@ -46,6 +46,7 @@ public:
 		for (size_t i = 0; i < 6; ++i)
 			_count_EM[i] = bookCounter("count_EM" + toString(i+1));
 
+		//0: signal, 1: Wmunu, 2: Zmumu, 3: Wenu, 4: ttbar, 5: PreSelection
 		for (size_t i = 0; i < 6; i++){
 			_count_Regions[i] = bookCounter("count_Region" + toString(i+1));
 		}
@@ -117,7 +118,7 @@ public:
 
 		if(!topo_cuts) vetoEvent;
 
-		int region_ = -1; //0: signal, 1: Wmunu, 2: Zmumu, 3: Wenu, 4: ttbar, -1: NONE
+		int region_ = 5;
 
 		//signal regions
 		if ( isoelecs.empty() && isomus.empty())
