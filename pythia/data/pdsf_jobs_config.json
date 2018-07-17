@@ -1,5 +1,0 @@
-{
-	"pythia_parameters": "pythia8_tuning_parameters.json",
-	"nRuns": 4,
-	"nEventsPerRun": 100000
-}

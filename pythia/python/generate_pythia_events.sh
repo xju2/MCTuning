@@ -1,6 +1,6 @@
 #!/bin/bash
 echo $PWD
-which root
+which gcc 
 which rivet
 
 if [ $# -lt 3 ]; then
@@ -21,6 +21,8 @@ echo "Random:seed = ${seed}" >> $para
 
 fifoFile="my_fifo_${seed}"
 mkfifo $fifoFile
+
+export RIVET_SMEAR_FILE="$PWD/detector_config.yoda" 
 #pythia /global/homes/x/xju/mctuning/software/MCTuning/pythia/data/${analysis}.cmnd ${fifoFile} -t=${para} &
 pythia ${process} ${fifoFile} -t=${para} &
 rivet --analysis=${analysis} -o out_${seed}.yoda ${fifoFile}

@@ -5,167 +5,134 @@ import json
 import sys
 
 import math
+import pandas as pd
 
-def find_precision(number):
-    # https://stackoverflow.com/questions/3018758/determine-precision-and-scale-of-particular-number-in-python?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
-    max_digits = 14
-    int_part = int(number)
-    magnitude = 1 if int_part == 0 else int(math.log10(int_part)) + 1
-    if magnitude >= max_digits:
-        return (magnitude, 0)
+import yoda
 
-    frac_part = abs(number) - int_part
-    multiplier = 10 ** (max_digits - magnitude)
-    frac_digits = multiplier + int(multiplier * frac_part + 0.5)
-    while frac_digits % 10 == 0:
-        frac_digits /= 10
+from parameter import Parameter
 
-    scale = int(math.log10(frac_digits))
-    return (magnitude+scale, scale)
+import pyDOE
+
 
 def least_runs(n):
     # n is the number of parameters
     # return number of coefficient to be fitted
     return 1 + n + n*(n+1)/2
 
-class Sampling:
-    def __init__(self, min_, max_):
-        self.min_ = min_
-        self.max_ = max_
-        #self.scale = max(find_precision(self.max_)[1],
-        #                 find_precision(self.min_)[1])
-        self.current = 0
-        self.point_list = []
-
-    def generate(self, npoints):
-        pass
-
-    def mid(self):
-        return 0.5*(self.min_ + self.max_)
-
-    def get(self):
-        if self.current >= len(self.point_list):
-            raise IndexError("Maximum points: {}, but asking {}.".format(
-                len(self.point_list), self.current)
-            )
-
-        value = self.point_list[self.current]
-        self.current += 1
-        return value
-
-class LinearSampling(Sampling):
-
-    def generate(self, npoints):
-        scale = max(find_precision(self.max_)[1],
-                    find_precision(self.min_)[1],
-                    find_precision(npoints)[0]
-                   )
-
-        self.current = 0
-        step = (self.max_ - self.min_)/(npoints - 1)
-        self.point_list = [round(self.min_ + x*step, scale) for x in range(npoints-1)]
-        self.point_list.append(self.max_)
-
-def get_sampling(para, sampling_type):
-    if sampling_type == "Linear":
-        return LinearSampling(para.min_, para.max_)
-    else:
-        print sampling_type,"is not implemented!"
-        print "Linear will be used"
-        return LinearSampling(para.min_, para.max_)
-
-class Parameter:
-    """
-    Must contain a unique name,
-    id, nickname and description are optional.
-    """
-    def __init__(self, name,  min_, max_,
-                 sampling="Linear",
-                 description="None",
-                 id_=-1,
-                 nickname=None,
-                 scale=-1
-                ):
-        self.id_ = id_
-        self.name = name
-
-        if nickname is None:
-            self.nickname = self.name
-        else:
-            self.nickname = nickname
-
-        self.min_= min_
-        self.max_= max_
-        self.value = self.min_
-
-        self.sampling = get_sampling(self, sampling)
-        self.description = description
-        self.scale = scale
-
-    def jsonDefault(self):
-        return self.__dict__
-
-    def to_str(self):
-        return "{} {}({},{})".format(self.id_, self.name, self.min_, self.max_)
-
-    def __repr__(self):
-        return "Parameter {}({},{})".format(self.name, self.min_, self.max_)
-
-    def __str__(self):
-        return self.to_str()
-
-    def __eq__(self, other):
-        return self.name == other.name
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-            return hash((self.name))
-
-    def for_tune(self):
-        return "{} {}".format(self.nickname, self.value)
-
-    def for_config(self):
-        return "{:<40} = {:<10} \t! {}".format(self.name, self.value, self.description)
-
 class TuneMngr:
     """
     Manage tuned prameters and sampling of these parameters
     """
-    def __init__(self):
+    def __init__(self, json_file):
+        # avoid any duplicated variables from the input
+        # two variables are the same, if they share the
+        # same name
         self.para_list = set([])
 
-    def readInputJason(self, json_file):
         data = json.load(open(json_file))
         for value in data["variables"]:
             self.para_list.add(Parameter(**value))
 
+        self.DOE = data.get("DOE", "one-to-one")
+        if self.DOE.lower() != "factorial" and \
+           self.DOE.lower() != "one-to-one":
+            print "I don't know how to do: ", self.DOE
+            print "but it's OK, I will just use Factorial"
+
+
+        self.summary()
+
+    def minimum_runs_for_Prof(self):
+        return least_runs(len(self.para_list))
+
+    def runs_from_DOE(self):
+        return 1
+
     def summary(self):
-        print "Total parameters: {}".format(len(self.para_list))
+        print "\nBegin of parameter summary"
+        print "  Design of Exp.:", self.DOE
+        print "  Total parameters: {}".format(len(self.para_list))
         for para in sorted(self.para_list, key=lambda para:para.id_):
-            print para
+            print "\t",para
 
-    def generate(self, npoints):
-        self.current = 0
+        print "End of parameter summary"
+
+    def append_factors(self, para):
+        if len(new_list) > 0:
+            para.run_values = para.values*reduce(lambda x, y: x*y, [len(z.values) for z in new_list])
+        else:
+            para.run_values = para.values
+
+    def append_one2one(self, para):
+        """use the values provided by the parameter itself.
+        The ones with shorter value-list are filled by their nominal values
+        """
+        para.run_values = para.values + [para.nominal]*(self.max_len - len(para.values))
+
+
+    def generate(self):
+        if self.DOE.lower() == "one-to-one":
+            self.max_len = max([len(para.values) for para in self.para_list])
+            map(self.append_one2one, self.para_list)
+
+        elif self.DOE.lower() == "factorial":
+            index_array = pyDOE.fullfact([len(para.values) for para in self.para_list])
+            for ip, para in enumerate(self.para_list):
+                para.run_values = [para.values[int(x)] for x in index_array[:, ip]]
+        else:
+            print "I do nothing."
+
+        data = dict([(para.nickname, para.run_values) for para in self.para_list])
+        self.df = pd.DataFrame(data=data)
+        print "\n****Generated List of Parameters***"
+        print self.df.head()
+        print "\n"
+        return self.df.shape
+
+    def get_config(self, irun):
+        return "\n".join([para.config(self.df[para.nickname].iloc[irun])\
+                          for para in self.para_list if para.type_ == "pythia"])
+
+    def get_tune(self, irun):
+        return "\n".join([para.prof_config(self.df[para.nickname].iloc[irun]) for para in self.para_list])
+
+    def update_nickname(self, detector_hists):
         for para in self.para_list:
-            para.sampling.generate(npoints)
+            if para.type_ == "pythia":
+                continue
+            hist2D = detector_hists.get(para.name, None)
+            if hist2D is not None:
+                bin_2d = hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['pT'])
+                para.nickname = para.nickname+"_bin"+str(bin_2d)
 
-    def fetch(self):
-        self.current += 1
+    def update_detector(self, irun, detector_hists):
+        new_hists = {}
+        for key,value in detector_hists.iteritems():
+            new_hists[key] = value.clone()
+
         for para in self.para_list:
-            para.value = para.sampling.get()
+            if para.type_ == "pythia":
+                continue
 
-    def get_config(self):
-        return "\n".join([para.for_config() for para in self.para_list])
+            hist2D = new_hists.get(para.name, None)
+            if hist2D is not None:
+                bin_2d = hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['pT'])
+                # print "INFO: ",hist2D.bin(bin_2d).volume, hist2D.bin(bin_2d).height
+                hist2D.fillBin(bin_2d, -1*hist2D.bin(bin_2d).volume)
+                hist2D.fillBin(bin_2d, self.df[para.nickname].iloc[irun])
+                # print "After: ",hist2D.bin(bin_2d).volume, hist2D.bin(bin_2d).height
+                # para.nickname = para.nickname+"_bin"+str(bin_2d)
+                # print "bin index: ", hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['pT'])
+                # print "set to: ", self.df[para.nickname].iloc[irun]
+            else:
+                print para.name,"is not in detector configuration"
 
-    def get_tune(self):
-        return "\n".join([para.for_tune() for para in self.para_list])
+        return new_hists
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print sys.argv[0]," json"
-        sys.exit(1)
+        exit(1)
 
     print least_runs(1)
     print least_runs(5)
@@ -175,24 +142,19 @@ if __name__ == "__main__":
     print least_runs(500)
     print least_runs(1000)
 
-    sys.exit(0)
-    tune = TuneMngr()
-    tune.readInputJason(sys.argv[1])
-    # tune.summary()
-    nruns = 3
-    tune.generate(nruns)
+    #sys.exit(0)
+    tune = TuneMngr(sys.argv[1])
+
+    tune.generate()
     irun = 0
-    while True:
-        irun += 1
-        print "-------",irun,"-------------"
+    while irun < 1:
         try:
-            tune.fetch()
+            print "--------begin config------------"
+            print tune.get_config(irun)
+            print "--------end config------------\n"
+            print "--------begin tune------------"
+            print tune.get_tune(irun)
+            print "--------end tune------------\n"
         except IndexError:
-            print "Index Error, stop!"
             break
-        print "--------begin config------------"
-        print tune.get_config()
-        print "--------end config------------"
-        print "--------begin tune------------"
-        print tune.get_tune()
-        print "--------end tune------------"
+        irun += 1

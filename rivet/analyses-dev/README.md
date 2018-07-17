@@ -1,0 +1,4 @@
+# Installation
+```unix
+./build.sh
+```

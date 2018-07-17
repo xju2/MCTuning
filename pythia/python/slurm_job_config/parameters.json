@@ -1,4 +1,5 @@
 {
+	"DOE": "one-to-one",
 	"variables": [
 	{
 		"id_": 0,
@@ -6,8 +7,9 @@
 		"nickname": "SPalphaS",
 		"description": "The alpha_s value at scale M_Z",
 		"min_": 0.12,
+		"nominal": 0.13,
 		"max_": 0.15,
-		"sampling": "Linear"
+		"values": [0.122]
 	}
 	]
 }

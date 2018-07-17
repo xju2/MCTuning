@@ -1,0 +1,38 @@
+Name: ATLAS_2017_I1519428
+Year: 2017
+Summary: Search for new phenomena in dijet events using 37 fb$^−1$ of pp collision data collected at 13 TeV with the ATLAS detector 
+Experiment: ATLAS
+Collider: LHC
+InspireID: 1519428
+Status: UNVALIDATED
+Authors:
+ - ATLAS Collaboration
+
+RunInfo: <Jets are reconstructed by the anti-kT algorithm with R = 0.4. Each event is required to have two leading jets ordered by their transverse momentum passing pT > 400 (60) GeV, respectively.>
+NeedCrossSection: no
+Beams: [p+, p+]
+Energies: [13000] 
+Description:
+	'<Dijet events are studied in the proton--proton collision dataset recorded at $\sqrt{s}$ =13~TeV with the ATLAS detector at the Large Hadron Collider in 2015 and 2016, corresponding to integrated luminosities of 3.5 fb$^{−1}$ and 33.5 fb^{−1} respectively. Invariant mass and angular distributions are compared to background predictions and no significant deviation is observed.>'
+BibKey: Aaboud:2017yvp
+BibTeX: '@article{Aaboud:2017yvp,
+      author         = "Aaboud, Morad and others",
+      title          = "{Search for new phenomena in dijet events using 37
+                        fb$^{-1}$ of $pp$ collision data collected at
+                        $\sqrt{s}=$13 TeV with the ATLAS detector}",
+      collaboration  = "ATLAS",
+      journal        = "Phys. Rev.",
+      volume         = "D96",
+      year           = "2017",
+      number         = "5",
+      pages          = "052004",
+      doi            = "10.1103/PhysRevD.96.052004",
+      eprint         = "1703.09127",
+      archivePrefix  = "arXiv",
+      primaryClass   = "hep-ex",
+      reportNumber   = "CERN-EP-2017-042",
+      SLACcitation   = "%%CITATION = ARXIV:1703.09127;%%"
+}'
+ToDo:
+ - Implement the analysis, test it, remove this ToDo, and mark as VALIDATED :-)
+

@@ -5,7 +5,8 @@ if [ $# -lt 1 ];then
 	exit
 fi
 
-DEST=$1
+baseDEST=/project/projectdirs/atlas/www/xju
+DEST=${baseDEST}/$1
 
 if [ -d $DEST ]; then
 	echo "$DEST is there"
@@ -22,11 +23,14 @@ if [ -d $DEST ]; then
 	mv -v $DEST ${DEST}_bak
 fi
 
-mkdir -v $DEST
+mkdir -pv $DEST
 cp -r envelopes sensitivity_plots $DEST
+
+cp tunes/results.txt $DEST
 
 if [ -d validation ]; then
 	cp -r validation $DEST
 fi
 
-chmod -R 755 $DEST
+#chmod -R 755 $DEST
+chmod -R 755  /project/projectdirs/atlas/www/xju
