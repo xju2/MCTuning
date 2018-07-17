@@ -17,7 +17,7 @@ def compare_yoda(ref, tuned_dict, options=None):
         "logY": True,
         "title": "validation",
         "ratioylabel": "Tuned / Ref",
-        "errorbars": True, 
+        "errorbars": False, 
         "ratioymin": 0.1,
         "ratioymax": 2,
         'ratiogrid': True
@@ -48,12 +48,11 @@ def compare_yoda(ref, tuned_dict, options=None):
         plotkeys['xlabel'] = title
         
         for label, yoda_handle in tuned_dict.iteritems():
-            tuned_hist = yoda_handle[key]            
-            # print tuned_hist
-            if tuned_hist:
+            try: 
+                tuned_hist = yoda_handle[key]            
                 tuned_hist.setAnnotation("Title", label)
                 hists_list.append(tuned_hist)
-            else:
+            except KeyError:
                 print title," missed tuned data"
             
         out_name = output_dir+"/validation_"+title+".pdf"
