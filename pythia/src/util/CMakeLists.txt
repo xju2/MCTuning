@@ -1,10 +1,9 @@
 # add pythia path
-include_directories(/global/homes/x/xju/mctuning/software/pythia8.2/pythia8.2-install/include)
-include_directories(/global/homes/x/xju/mctuning/software/HepMC/hepmc2-install/include)
+include_directories(/global/homes/x/xju/hep_packages/Extra/pythia8235/include)
+include_directories(/global/homes/x/xju/hep_packages/Extra/HepMC-2.06.09/include)
 
-link_directories(/global/homes/x/xju/mctuning/software/pythia8.2/pythia8.2-install/lib)
-link_directories(/global/homes/x/xju/mctuning/software/HepMC/hepmc2-install/lib)
-
+link_directories(/global/homes/x/xju/hep_packages/Extra/pythia8235/lib)
+link_directories(/global/homes/x/xju/hep_packages/Extra/HepMC-2.06.09/lib)
 
 # add pythia executables
 add_executable(pythia pythia.cxx)

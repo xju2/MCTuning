@@ -8,6 +8,9 @@
 #include "Rivet/Projections/SmearedParticles.hh"
 #include "Rivet/Projections/SmearedJets.hh"
 #include "Rivet/Projections/SmearedMET.hh"
+#include "Rivet/Tools/Logging.hh"
+
+#include <stdio.h>
 
 namespace Rivet {
 
@@ -18,26 +21,38 @@ public:
     /// Constructor
     DEFAULT_RIVET_ANALYSIS_CTOR(ATLAS_2017_I1635274);
 
+
     /// Book histograms and initialise projections before the run
 	void init() {
+		int print_level = Log::INFO;
+		this->getLog().setLevel(Log::DEBUG);
 
 		FastJets jets(FinalState(Cuts::abseta < 4.9), FastJets::ANTIKT, 0.4);
 		SmearedJets recojets(jets, JET_SMEAR_ATLAS_RUN1);
 		declare(recojets, "Jets");
 
-		FinalState electrons(Cuts::abspid == PID::ELECTRON && Cuts::abseta < 2.47 && Cuts::pT > 20*GeV);
-		// TODO: do use Loose for baseline electrons, but Medium for signal electrons
-		SmearedParticles recoelectrons(electrons, ELECTRON_EFF_ATLAS_RUN1);
-		declare(recoelectrons, "Electrons");
+		IdentifiedFinalState elecs(Cuts::abseta < 2.47 && Cuts::pT > 20*GeV);
+		elecs.acceptIdPair(PID::ELECTRON);
+		declare(elecs, "elecs");
+		IdentifiedFinalState muons(Cuts::abseta < 2.5 && Cuts::pT > 10*GeV);
+		muons.acceptIdPair(PID::MUON);
+		declare(muons, "muons");
 
-		FinalState muons(Cuts::abspid == PID::MUON && Cuts::abseta < 2.50 && Cuts::pT > 10*GeV);
-		SmearedParticles recomuons(muons, MUON_EFF_ATLAS_RUN1);
-		declare(recomuons, "Muons");
+		SmearedParticles recoEle(elecs, ELECTRON_EFF_ATLAS_RUN1, ELECTRON_SMEAR_ATLAS_RUN1);
+		recoEle.getLog().setLevel(print_level);
+		declare(recoEle, "Electrons");
+		printf("recoEle: %d\n", &recoEle);
+
+		SmearedParticles recoMuons(muons, MUON_EFF_ATLAS_RUN1, MUON_SMEAR_ATLAS_RUN1);
+		recoMuons.getLog().setLevel(print_level);
+		declare(recoMuons, "Muons");
+		printf("recoMuons: %d\n", &recoMuons);
 
 		VisibleFinalState calofs(Cuts::abseta < 4.9 && Cuts::abspid != PID::MUON);
 		MissingMomentum met(calofs);
-		SmearedMET recomet(met, MET_SMEAR_ATLAS_RUN1);
-		declare(recomet, "MET");
+		declare(met, "MET");
+		// SmearedMET recomet(met, MET_SMEAR_ATLAS_RUN1);
+		// declare(recomet, "MET");
 
 
 		/// Book histograms
@@ -48,7 +63,7 @@ public:
 
 		//0: signal, 1: Wmunu, 2: Zmumu, 3: Wenu, 4: ttbar, 5: PreSelection
 		for (size_t i = 0; i < 6; i++){
-			_count_Regions[i] = bookCounter("count_Region" + toString(i+1));
+			_count_Regions[i] = bookCounter("count_Region" + toString(i));
 		}
 
 		int table_index = 1;
@@ -70,14 +85,19 @@ public:
 
 
 	/// Perform the per-event analysis
-	void analyze(const Event& event) {
+	void analyze(const Event& event) 
+	{
+		MSG_DEBUG("Entering...");
 		const Jets jets = apply<JetAlg>(event, "Jets").jetsByPt(Cuts::pT > 20*GeV && Cuts::abseta < 2.8);
 		const Jets signal_jets = apply<JetAlg>(event, "Jets").jetsByPt(Cuts::pT > 30*GeV && Cuts::abseta < 2.8);
 
-		const Particles elecs = apply<ParticleFinder>(event, "Electrons").particlesByPt();
-		const Particles mus = apply<ParticleFinder>(event, "Muons").particlesByPt();
-		MSG_DEBUG("Number of raw jets, electrons, muons = "
-				<< jets.size() << ", " << elecs.size() << ", " << mus.size() << ", " << signal_jets.size());
+		// const Particles elecs = apply<ParticleFinder>(event, "Electrons").particlesByPt();
+		// const Particles mus = apply<ParticleFinder>(event, "Muons").particlesByPt();
+		const Particles elecs = apply<IdentifiedFinalState>(event, "elecs").particlesByPt();
+		const Particles mus = apply<IdentifiedFinalState>(event, "muons").particlesByPt();
+
+		MSG_DEBUG("Number of raw jets, electrons, muons, leptons = "
+				<< jets.size() << ", " << elecs.size() << ", " << mus.size());
 
 		// Discard jets very close to electrons, or with low track multiplicity and close to muons
 		const Jets isojets = filter_discard(signal_jets, [&](const Jet& j) {
@@ -103,8 +123,8 @@ public:
 				});
 
 		// Calculate ETmiss
-		//const Vector3& vet = apply<MissingMomentum>(event, "MET").vectorEt();
-		const Vector3& vet = apply<SmearedMET>(event, "MET").vectorEt();
+		const Vector3& vet = apply<MissingMomentum>(event, "MET").vectorEt();
+		// const Vector3& vet = apply<SmearedMET>(event, "MET").vectorEt();
 		const double etmiss = vet.perp();
 
 		const double weight = event.weight();
@@ -118,11 +138,16 @@ public:
 
 		if(!topo_cuts) vetoEvent;
 
+		MSG_DEBUG("Number of filtered jets, electrons, muons = "
+				<< isojets.size() << ", " << isoelecs.size() << ", " << isomus.size());
+
 		int region_ = 5;
+		MSG_DEBUG("Passed basic selections");
 
 		//signal regions
 		if ( isoelecs.empty() && isomus.empty())
 		{
+			MSG_DEBUG("No electrons, no Muons...");
 			region_ = 0;
 			// Get ETmiss bin number and fill counters
 			const int i_etmiss = binIndex(etmiss/GeV, ETMISS_CUTS);
@@ -150,8 +175,13 @@ public:
 		// W -> munu control region
 		if (isomus.size() == 1 && isoelecs.empty())
 		{
+			MSG_DEBUG("Having one muon...");
 			const Particle& muon = isomus.at(0);
-			double mT = sqrt(2* muon.perp() * etmiss * (1 - cos(deltaPhi(muon.phi(), vet.phi())) ));
+			double mT = sqrt(2* muon.pt() * etmiss * (1 - cos(deltaPhi(muon.phi(), (-vet).phi())) ));
+			MSG_DEBUG("mT:" << mT/GeV << "[GeV], bjets size:"
+					<< bjets.size()<<"; MET: " << etmiss/GeV << " [GeV]. Muon pT: " 
+					<< muon.pt()/GeV << " [GeV]; DeltaPhi: " <<  deltaPhi(muon.phi(), (-vet).phi())
+					); 
 			if( mT > 30*GeV && mT < 100*GeV){
 				if(bjets.empty()){
 					region_ = 1;
@@ -178,6 +208,7 @@ public:
 
 		// W -> enu control region
 		if(isoelecs.size() == 1){
+			MSG_DEBUG("Having one electron...");
 			// and with pT > 30 GeV and 1.37 < |eta| < 1.52
 			const Particle& ele = isoelecs.at(0);
 			if(ele.pt() > 30*GeV && (ele.eta() <= 1.37 || ele.eta() >= 1.52) )
@@ -187,7 +218,8 @@ public:
 					HT += j.pT();
 				}
 				double ht_ratio = etmiss/sqrt(HT);
-				double mT = sqrt(2* ele.perp() * etmiss * (1 - cos(deltaPhi(ele.phi(), vet.phi())) ));
+				double mT = sqrt(2* ele.perp() * etmiss * (1 - cos(deltaPhi(ele.phi(), (-vet).phi())) ));
+				MSG_DEBUG("mT:" << mT/GeV << "[GeV], " << ht_ratio); 
 				if( mT > 30*GeV && mT < 100*GeV && ht_ratio > 5){
 					region_ = 3;
 					_h_met_wenu		->fill(etmiss/GeV, weight);
@@ -196,6 +228,7 @@ public:
 			}
 		}
 		_count_Regions[region_]->fill(weight);
+		MSG_DEBUG("Leaving...");
 	}
 
 	/// Normalise histograms etc., after the run
