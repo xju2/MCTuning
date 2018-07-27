@@ -29,26 +29,8 @@ Beams:eCM = 13000.                 ! CM energy of collision
 
 
 ! Example 2: t-tbar production.
-Top:gg2ttbar = on                  ! g g -> t tbar
-Top:qqbar2ttbar = on               ! q qbar -> t tbar
+Top:all = on                  !  all productions singly or in pairs.
 
-! Example 3: Z0 production; should set mMin.
-! WeakSingleBoson:ffbar2W = on     	! q qbar -> W
-! 23:onMode	= off 					! turn off all decay modes
-! 23:onIfAny	= 11 					! turn on enu decay mode
-#PhaseSpace:pTHatMin	= 80			! lower pT 
-
-! Example 4: gauge boson pair production; set pTmin. Not yet complete.
-#WeakDoubleBoson:ffbar2ZW = on      ! q qbar -> Z0 W+-
-#WeakDoubleBoson:ffbar2WW = on      ! q qbar -> W+ W-
-#PhaseSpace:pTHatMin = 20.          ! minimal pT scale in process
-
-! 5) Switch on/off the key event generation steps
-#PartonLevel:MPI = off              ! no multiparton interactions
-#PartonLevel:ISR = off              ! no initial-state radiation
-#PartonLevel:FSR = off              ! no final-state radiation
-#HadronLevel:Hadronize = off        ! no hadronization
-#HadronLevel:Decay = off            ! no decays
 
 ! 6) Other settings. Can be expanded as desired.
 #Tune:preferLHAPDF = off            ! use internal PDFs when LHAPDF not linked
