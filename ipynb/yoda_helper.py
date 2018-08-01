@@ -15,16 +15,20 @@ def compare_yoda(ref, tuned_dict, options=None):
         "xlabel": "",
         "ylabel": "Events / Bin",
         "logY": True,
-        "title": "validation",
+        "title": "",
         "ratioylabel": "Tuned / Ref",
-        "errorbars": False, 
+        "errorbars": False,
         "ratioymin": 0.1,
         "ratioymax": 2,
-        'ratiogrid': True
+        'ratiogrid': False 
     }
 
     if options is None:
         options = dict()
+    else:
+        for key in options.keys():
+            if key in plotkeys:
+                plotkeys[key] = options[key]
 
     tuned = tuned_dict.values()[0]
 
@@ -43,21 +47,28 @@ def compare_yoda(ref, tuned_dict, options=None):
             print "/REF"+key+" not found"
             break
 
-        title = ref_hist.path.split('/')[-1]
         hists_list.append(ref_hist)
-        plotkeys['xlabel'] = title
+        title = ref_hist.path.split('/')[-1]
+        
+        plotkeys['xlabel'] = options[title][0] if title in options else title
+        plotkeys['logY'] = options[title][1] if title in options else plotkeys['logY']
 
         for label, yoda_handle in tuned_dict.iteritems():
-            try: 
-                tuned_hist = yoda_handle[key]            
+            try:
+                tuned_hist = yoda_handle[key]
                 tuned_hist.setAnnotation("Title", label)
                 hists_list.append(tuned_hist)
             except KeyError:
                 print title," missed tuned data"
 
-        out_name = output_dir+"/validation_"+title+".pdf"
-        #yoda.plotting.plot(hists_list, outfile=out_name, plotkeys=plotkeys)
+        if plotkeys.get('logY', False):
+            out_name = output_dir+"/validation_"+title+"_LogY.eps"
+        else:
+            out_name = output_dir+"/validation_"+title+"_LinearY.eps"
         yoda.plot(hists_list, outfile=out_name, **plotkeys)
+        # break
+
+
 
 def compare_yoda_files(ref_file, tuned_dict_files, options=None):
     tuned_dict = {}
