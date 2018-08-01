@@ -1,0 +1,49 @@
+! This file contains commands to be read in for a Pythia8 run.
+! Lines not beginning with a letter or digit are comments.
+! Names are case-insensitive  -  but spellings-sensitive!
+! The settings here are illustrative, not always physics-motivated.
+
+! 1) Settings used in the main program.
+Main:numberOfEvents = 100         ! number of events to generate
+Main:timesAllowErrors = 100         ! how many aborts before run stops
+
+! 2) Settings related to output in init(), next() and stat().
+Init:showChangedSettings = on      ! list changed settings
+Init:showChangedParticleData = off ! list changed particle data
+Next:numberCount = 100             ! print message every n events
+Next:numberShowInfo = 1            ! print event information n times
+Next:numberShowProcess = 1         ! print process record n times
+Next:numberShowEvent = 0           ! print event record n times
+
+! 3) Beam parameter settings. Values below agree with default ones.
+Beams:idA = 2212                   ! first beam, p = 2212, pbar = -2212
+Beams:idB = 2212                   ! second beam, p = 2212, pbar = -2212
+Beams:eCM = 13000.                 ! CM energy of collision
+
+! 4) Settings for the hard-process generation.
+54:m0 = 1000.0
+52:m0 = 10.0
+DM:gg2S2XXj = on 					! S is assumed to be on-shell.
+54:onMode = off
+54:onIfAny = 52
+
+
+! 6) Other settings. Can be expanded as desired.
+#Tune:preferLHAPDF = off            ! use internal PDFs when LHAPDF not linked
+Tune:ee = 7                         ! use Monash 2013 Tune by Peter Skands
+Tune:pp = 14                        ! use Monash 2013 Tune by Peter Skands
+ParticleDecays:limitTau0 = on      ! set long-lived particle stable ...
+ParticleDecays:tau0Max = 10        ! ... if c*tau0 > 10 mm
+
+Random:setSeed = on 	! user-set seed
+Random:seed	= 10		! BeChanged 
+
+! 7) Defined to match Manosh tuning
+PDF:pSet = 13 			! NNPDF2.3 QCD+QED LO alpha_s(M_Z) = 0.130. Will be used everywhere 
+#PDF:useHard = off 		! PDF used only for hard process
+#PDF:pHardSet = 13
+
+! 8) Turn-on biased selection
+#PhaseSpace:bias2Selection = on
+#PhaseSpace:bias2SelectionPow = 4.0 ! as used in example, but ATLAS DSID:304784 uses 5.0
+#PhaseSpace:bias2SelectionRef = 100. ! to giet "resonably-sized" weights

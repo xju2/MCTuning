@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <math.h>
 
 using namespace std;
 
@@ -7,12 +8,14 @@ void ELECTRON_IDEFF_ATLAS_RUN1_MEDIUM();
 void ELECTRON_IDEFF_ATLAS_RUN2_LOOSE();
 void ELECTRON_IDEFF_ATLAS_RUN1_TIGHT();
 void MUON_SMEAR_ATLAS_RUN1();
+void ELECTRON_SMEAR_ATLAS_RUN1_E2S();
 
 int main(int argc, char** argv){
 	// ELECTRON_IDEFF_ATLAS_RUN1_MEDIUM();
 	// ELECTRON_IDEFF_ATLAS_RUN2_LOOSE(); 
 	// ELECTRON_IDEFF_ATLAS_RUN1_TIGHT();
-	MUON_SMEAR_ATLAS_RUN1();
+	// MUON_SMEAR_ATLAS_RUN1();
+	ELECTRON_SMEAR_ATLAS_RUN1_E2S();
 	return 0;
 }
 
@@ -154,4 +157,31 @@ void MUON_SMEAR_ATLAS_RUN1()
 				<< res.at(ibin) << "\t 0\t1\t0\t1" << endl;
 		}
   }
+}
+
+
+void ELECTRON_SMEAR_ATLAS_RUN1_E2S()
+{
+    const vector<double> edges_eta = {0., 2.5, 3., 5.};
+    const vector<double> edges_pt = {0., 0.1, 25., 10000};
+    const vector<double> e2s = {0.000, 0.015, 0.005,
+                                0.005, 0.005, 0.005,
+                                0.107, 0.107, 0.107};
+    const vector<double> es = {0.00, 0.00, 0.05,
+                               0.05, 0.05, 0.05,
+                               2.08, 2.08, 2.08};
+    const vector<double> cs = {0.00, 0.00, 0.25,
+                                      0.25, 0.25, 0.25,
+                                      0.00, 0.00, 0.00};
+
+	for(int i = 0; i < (int) edges_pt.size() -1; i ++){
+		for(int j = 0; j < (int) edges_eta.size()-1; j++){
+			int ibin = j*(edges_pt.size() -1) + i;
+			
+			cout << edges_eta.at(j) <<"\t " << edges_eta.at(j+1) 
+				<< "\t " << edges_pt.at(i) << "\t " << edges_pt.at(i+1) << "\t "
+				<< cs.at(ibin) << "\t 0\t 1\t 0\t 1" << endl;
+		}
+  }
+
 }
