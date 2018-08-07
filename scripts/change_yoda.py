@@ -86,9 +86,45 @@ def ATLAS_2017_I1519428(in_file, out_file):
     yoda.write(new_rivet, out_file)
     yoda.write(new_ref, "ATLAS_2017_I1519428_ref.yoda")
 
+
+def ATLAS_2017_I1635274(in_file, out_file):
+    """
+    Divided out the bin-width for jet pT distributions
+    add Poisson error on data
+    """
+    data = yoda.read(in_file)
+    new_rivet = []
+    new_ref = []
+    for key, value in data.iteritems():
+        scale = 1.
+        if 'd01' in key or 'd02' in key:
+            scale = 2
+
+        for p in value.points:
+            if abs(p.yErrs.minus) < 1E-5:
+                y_err = math.sqrt(p.y)/scale
+                p.yErrs = (y_err, y_err)
+            else:
+                p.yErrs = (p.yErrs.minus/scale , p.yErrs.plus/scale)
+
+            p.y = p.y / scale
+
+
+        if 'd02' in key or 'd04' in key or 'd06' in key\
+           or 'd08' in key or 'd10' in key or 'd11' in key:
+            # scale by bin-width
+            for p in value.points:
+                bin_width = p.xErrs.minus + p.xErrs.plus
+                p.yErrs = (p.yErrs.minus/bin_width, p.yErrs.plus/bin_width)
+                p.y = p.y / bin_width
+
+        new_rivet.append(value)
+    yoda.write(new_rivet, out_file)
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print sys.argv[0],"data.yoda newdata.yoda"
         exit(1)
 
-    ATLAS_2017_I1519428(*sys.argv[1:])
+    #ATLAS_2017_I1519428(*sys.argv[1:])
+    ATLAS_2017_I1635274(*sys.argv[1:])

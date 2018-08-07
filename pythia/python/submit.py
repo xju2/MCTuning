@@ -12,6 +12,8 @@ import sys
 import os
 import glob
 
+import time
+
 from optparse import OptionParser
 
 def str_to_int(events):
@@ -38,6 +40,20 @@ def str_to_int(events):
         res = -1
 
     return res
+
+def nersc_hours(queue_name, hours, nnodes, njobs):
+    """
+    only valide for Haswell
+    """
+    charge_factor = 0
+    if 'regular' in queue_name or 'debug' in queue_name:
+        charge_factor = 80
+    elif 'shared' in queue_name:
+        charge_factor = 2.5
+    else:
+        print("I don't know which queue you are in")
+
+    return charge_factor*hours*nnodes*njobs
 
 class Jobs:
     def __init__(self):
@@ -105,6 +121,12 @@ class Jobs:
         print "Queue to submit: {}".format(self.queue_name)
         print "Time reserved: {}".format(self.time)
         print "Repo to burn: {}".format(self.repo)
+        if os.getenv("NERSC_HOST") == 'cori':
+            time_str = time.strptime(self.time, '%H:%M:%S')
+            hours = time_str.tm_hour + time_str.tm_min/60.
+            print "Total NERSC Hours: {:,f}".format(
+                nersc_hours(self.queue_name, hours, 1, total_jobs)
+            )
         print "--------------------"
         if self.no_submit:
             print "This is a dry try, jobs are NOT submitted"

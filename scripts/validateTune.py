@@ -5,79 +5,14 @@ import yoda
 import os
 import sys
 
-def compare_yoda(ref, tuned_dict, options=None):
-    """
-    compare ref data with and tuned ones
-    """
-    if len(tuned_dict.values()) < 1:
-        return
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../ipynb')))
 
-    if options is None:
-        options = dict()
-
-    plotkeys = {
-        "xlabel": "",
-        "ylabel": "Events / Bin",
-        "logY": options.get('logY', True),
-        "title": "validation",
-        "ratioylabel": "Tuned / Ref",
-        "errorbars": True,
-        "ratioymin": 0.1,
-        "ratioymax": 2,
-        'ratiogrid': True
-    }
-
-
-    tuned = tuned_dict.values()[0]
-
-    output_dir = options.get('output_dir', "validation")
-
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    for key in sorted(tuned.keys()):
-        hists_list = []
-        try:
-            ref_hist = ref['/REF'+key]
-            ref_hist.setAnnotation("ratioref", True)
-            ref_hist.setAnnotation("Title", "Ref. data")
-        except KeyError:
-            print "/REF"+key+" not found"
-            break
-
-        title = ref_hist.path.split('/')[-1]
-        hists_list.append(ref_hist)
-        plotkeys['xlabel'] = title
-
-        for label, yoda_handle in tuned_dict.iteritems():
-            tuned_hist = yoda_handle[key]
-            # print tuned_hist
-            if tuned_hist:
-                tuned_hist.setAnnotation("Title", label)
-                hists_list.append(tuned_hist)
-            else:
-                print title," missed tuned data"
-
-        if plotkeys.get('logY', False):
-            out_name = output_dir+"/validation_"+title+"_LogY.pdf"
-        else:
-            out_name = output_dir+"/validation_"+title+"_LinearY.pdf"
-
-        #yoda.plotting.plot(hists_list, outfile=out_name, plotkeys=plotkeys)
-        yoda.plot(hists_list, outfile=out_name, **plotkeys)
-
-def compare_yoda_files(ref_file, tuned_dict_files, options=None):
-    tuned_dict = {}
-    ref_data = yoda.read(ref_file)
-
-    for key,value in tuned_dict_files.iteritems():
-        tuned_dict[key] = yoda.read(value)
-
-    compare_yoda(ref_data, tuned_dict, options)
+from yoda_helper import compare_yoda_files
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3: 
-        print sys.argv[0]," ref_data tuned_data [label]"
+    if len(sys.argv) < 3:
+        print os.path.basename(sys.argv[0])," ref_data tuned_data [label]"
+        exit(1)
 
     if len(sys.argv) > 3:
         label = sys.argv[3]
@@ -90,6 +25,7 @@ if __name__ == "__main__":
             label:  sys.argv[2]
         },
         "options": {
+            "output_dir": "validation",
             "logY": True
         }
     }

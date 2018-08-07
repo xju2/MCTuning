@@ -9,7 +9,7 @@ if [ $? -ne 0 ];then
 fi
 
 # chose options
-option="all"
+option="help"
 if [ $# -gt 0 ]; then
 	option=$1
 else
@@ -47,7 +47,7 @@ echo "----------comb----------"
 }
 function ipol(){
 echo "----------ipol----------"
-	prof2-ipol mc --rc=runcombs.dat:0 $OPT --pname=$PARAMS
+	prof2-ipol mc --rc=runcombs.dat:0 $OPT --pname=$PARAMS --order=2
 echo "----------ipol----------"
 }
 function sens(){
@@ -58,6 +58,7 @@ echo "----------sens----------"
 function tune(){
 echo "----------tune----------"
 	prof2-tune -d ref -r mc -s 1 --filter $OPT ipol.dat
+	#prof2-tune -d ref -r mc -s 1 $OPT ipol.dat
 echo "----------tune----------"
 }
 

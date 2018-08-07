@@ -22,16 +22,6 @@ Beams:eCM = 13000.                 ! CM energy of collision
 
 ! 4) Settings for the hard-process generation.
 
-! Example 1: QCD + prompt photon production; must set pTmin.
-#HardQCD:all = on                   ! switch on all QCD jet + jet processes
-!PromptPhoton:all = off 			! swich off gamma + jet and gamma + gamma
-#PhaseSpace:pTHatMin = 50.          ! minimal pT scale in process
-
-
-! Example 2: t-tbar production.
-#Top:gg2ttbar = on                  ! g g -> t tbar
-#Top:qqbar2ttbar = on               ! q qbar -> t tbar
-
 ! Example 3: Z0 production; should set mMin.
 WeakDoubleBoson:all = on     		! all diboson processes
 
