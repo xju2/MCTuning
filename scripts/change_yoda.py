@@ -2,6 +2,7 @@
 
 # change format of HepData: ATLAS_2014_I1268975 to match those generated from Rivet
 
+from __future__ import print_function
 import yoda
 import sys
 import re
@@ -21,7 +22,7 @@ def ATLAS_2014_I1268975(in_file, out_file):
             try:
                 scatter2D = data[ref_index]
             except KeyError:
-                print ref_index,"not found"
+                print(ref_index,"not found")
                 continue
 
             scatter2D.setAnnotation('Path', index)
@@ -95,23 +96,26 @@ def ATLAS_2017_I1635274(in_file, out_file):
     data = yoda.read(in_file)
     new_rivet = []
     new_ref = []
+    scaled_by_bin_width = ['d01', 'd03', 'd05', 'd07', 'd09']
+    to_be_scaled_by_bin_width = ['d02', 'd04', 'd06', 'd08', 'd10', 'd11']
+
     for key, value in data.iteritems():
-        scale = 1.
-        if 'd01' in key or 'd02' in key:
-            scale = 2
+        short_key = key[25:28]
+        # print(key, short_key)
 
         for p in value.points:
+            bin_width = p.xErrs.minus + p.xErrs.plus
             if abs(p.yErrs.minus) < 1E-5:
-                y_err = math.sqrt(p.y)/scale
+                if short_key in scaled_by_bin_width:
+                    ## such distributions have already scaled by bin-width
+                    y_err = math.sqrt(p.y*bin_width)/bin_width
+                else:
+                    y_err = math.sqrt(p.y)
                 p.yErrs = (y_err, y_err)
             else:
-                p.yErrs = (p.yErrs.minus/scale , p.yErrs.plus/scale)
+                p.yErrs = (p.yErrs.minus, p.yErrs.plus)
 
-            p.y = p.y / scale
-
-
-        if 'd02' in key or 'd04' in key or 'd06' in key\
-           or 'd08' in key or 'd10' in key or 'd11' in key:
+        if short_key in to_be_scaled_by_bin_width:
             # scale by bin-width
             for p in value.points:
                 bin_width = p.xErrs.minus + p.xErrs.plus
@@ -123,7 +127,7 @@ def ATLAS_2017_I1635274(in_file, out_file):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print sys.argv[0],"data.yoda newdata.yoda"
+        print(sys.argv[0],"data.yoda newdata.yoda")
         exit(1)
 
     #ATLAS_2017_I1519428(*sys.argv[1:])

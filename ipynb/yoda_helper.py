@@ -49,7 +49,7 @@ def compare_yoda(ref, tuned_dict, options=None):
 
         hists_list.append(ref_hist)
         title = ref_hist.path.split('/')[-1]
-        
+
         plotkeys['xlabel'] = options[title][0] if title in options else title
         plotkeys['logY'] = options[title][1] if title in options else plotkeys['logY']
 
@@ -62,9 +62,9 @@ def compare_yoda(ref, tuned_dict, options=None):
                 print title," missed tuned data"
 
         if plotkeys.get('logY', False):
-            out_name = output_dir+"/validation_"+title+"_LogY.eps"
+            out_name = output_dir+"/validation_"+title+"_LogY.pdf"
         else:
-            out_name = output_dir+"/validation_"+title+"_LinearY.eps"
+            out_name = output_dir+"/validation_"+title+"_LinearY.pdf"
         yoda.plot(hists_list, outfile=out_name, **plotkeys)
         # break
 
