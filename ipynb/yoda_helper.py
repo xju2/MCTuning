@@ -20,7 +20,7 @@ def compare_yoda(ref, tuned_dict, options=None):
         "errorbars": False,
         "ratioymin": 0.1,
         "ratioymax": 2,
-        'ratiogrid': False 
+        'ratiogrid': False
     }
 
     if options is None:
@@ -49,7 +49,7 @@ def compare_yoda(ref, tuned_dict, options=None):
 
         hists_list.append(ref_hist)
         title = ref_hist.path.split('/')[-1]
-        
+
         plotkeys['xlabel'] = options[title][0] if title in options else title
         plotkeys['logY'] = options[title][1] if title in options else plotkeys['logY']
 
