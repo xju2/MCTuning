@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # python 2.7.13
+from __future__ import print_function
 
 import json
 import sys
@@ -36,8 +37,8 @@ class TuneMngr:
         self.DOE = data.get("DOE", "one-to-one")
         if self.DOE.lower() != "factorial" and \
            self.DOE.lower() != "one-to-one":
-            print "I don't know how to do: ", self.DOE
-            print "but it's OK, I will just use Factorial"
+            print("I don't know how to do: ", self.DOE)
+            print("but it's OK, I will just use Factorial")
 
 
         self.summary()
@@ -49,13 +50,13 @@ class TuneMngr:
         return 1
 
     def summary(self):
-        print "\nBegin of parameter summary"
-        print "  Design of Exp.:", self.DOE
-        print "  Total parameters: {}".format(len(self.para_list))
+        print("\nBegin of parameter summary")
+        print("  Design of Exp.:", self.DOE)
+        print("  Total parameters: {}".format(len(self.para_list)))
         for para in sorted(self.para_list, key=lambda para:para.id_):
-            print "\t",para
+            print("\t",para)
 
-        print "End of parameter summary"
+        print("End of parameter summary")
 
     def append_factors(self, para):
         if len(new_list) > 0:
@@ -80,13 +81,13 @@ class TuneMngr:
             for ip, para in enumerate(self.para_list):
                 para.run_values = [para.values[int(x)] for x in index_array[:, ip]]
         else:
-            print "I do nothing."
+            print("I do nothing.")
 
         data = dict([(para.nickname, para.run_values) for para in self.para_list])
         self.df = pd.DataFrame(data=data)
-        print "\n****Generated List of Parameters***"
-        print self.df.head()
-        print "\n"
+        print("\n****Generated List of Parameters***")
+        print(self.df.head())
+        print("\n")
         return self.df.shape
 
     def get_config(self, irun):
@@ -117,7 +118,8 @@ class TuneMngr:
             hist2D = new_hists.get(para.name, None)
             if hist2D is not None:
                 bin_2d = hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['pT'])
-                # print "INFO: ",hist2D.bin(bin_2d).volume, hist2D.bin(bin_2d).height
+                #print("INFO: ",hist2D.bin(bin_2d).volume, hist2D.bin(bin_2d).height)
+                #print("BIN Index: ", bin_2d)
                 hist2D.fillBin(bin_2d, -1*hist2D.bin(bin_2d).volume)
                 hist2D.fillBin(bin_2d, self.df[para.nickname].iloc[irun])
                 # print "After: ",hist2D.bin(bin_2d).volume, hist2D.bin(bin_2d).height
@@ -125,22 +127,22 @@ class TuneMngr:
                 # print "bin index: ", hist2D.binIndexAt(para.other_opt['eta'], para.other_opt['pT'])
                 # print "set to: ", self.df[para.nickname].iloc[irun]
             else:
-                print para.name,"is not in detector configuration"
+                print(para.name,"is not in detector configuration")
 
         return new_hists
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print sys.argv[0]," json"
+        print(sys.argv[0]," json")
         exit(1)
 
-    print least_runs(1)
-    print least_runs(5)
-    print least_runs(6)
-    print least_runs(10)
-    print least_runs(100)
-    print least_runs(500)
-    print least_runs(1000)
+    print( least_runs(1))
+    print( least_runs(5))
+    print( least_runs(6))
+    print( least_runs(10))
+    print( least_runs(100))
+    print( least_runs(500))
+    print( least_runs(1000))
 
     #sys.exit(0)
     tune = TuneMngr(sys.argv[1])
@@ -149,12 +151,12 @@ if __name__ == "__main__":
     irun = 0
     while irun < 1:
         try:
-            print "--------begin config------------"
-            print tune.get_config(irun)
-            print "--------end config------------\n"
-            print "--------begin tune------------"
-            print tune.get_tune(irun)
-            print "--------end tune------------\n"
+            print("--------begin config------------")
+            print(tune.get_config(irun))
+            print("--------end config------------\n")
+            print("--------begin tune------------")
+            print(tune.get_tune(irun))
+            print("--------end tune------------\n")
         except IndexError:
             break
         irun += 1

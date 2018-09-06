@@ -93,7 +93,7 @@ class Jobs:
         print "reading detector configuration: ", detector_cfg
         self.detector_hist2D = yoda.read(detector_cfg)
 
-        self.tune.update_nickname(self.detector_hist2D)
+        #self.tune.update_nickname(self.detector_hist2D)
 
         return True
 
@@ -162,7 +162,8 @@ class Jobs:
                         c += line
 
                     if prof_out == c:
-                        n_yodas = len(glob.glob(folder+"/out_*.yoda"))
+                        #n_yodas = len(glob.glob(folder+"/out_*.yoda"))
+                        n_yodas = len([x for x in glob.glob(folder+"/*.yoda") if "detector" not in x])
                         if n_yodas > 0:
                             # print new_irun," is already in", folder, n_yodas
                             return False
@@ -181,21 +182,26 @@ class Jobs:
         with open(tune_output, 'w') as f:
             f.write(prof_out)
 
-        pythia_config_output = folder+"/tune_parameters.cmnd"
-        with open(pythia_config_output, 'w') as f:
-            # write global configurations
-            out =  "Random:setSeed           = on     ! user-set seed\n"
-            out += "Main:numberOfEvents     = {}\n".format(str(self.nEventsPerJob))
-            out += "Main:timesAllowErrors   = {}\n".format(str(max(int(self.nEventsPerJob * 0.002),  1)))
-            out += "Next:numberCount        = 10000  ! \n"
+        # write global configurations
+        out =  "Random:setSeed           = on     ! user-set seed\n"
+        out += "Main:numberOfEvents     = {}\n".format(str(self.nEventsPerJob))
+        out += "Main:timesAllowErrors   = {}\n".format(str(max(int(self.nEventsPerJob * 0.002),  1)))
+        out += "Next:numberCount        = 10000  ! \n"
+        out += '\n'
+
+        # additional options in jason input
+        if self.pythia_opt:
+            out += '\n'.join(self.pythia_opt)
             out += '\n'
 
-            # additional options in jason input
-            if self.pythia_opt:
-                out += '\n'.join(self.pythia_opt)
-                out += '\n'
+        out += pythia_out + '\n'
+        pythia_config_output = folder+"/tune_parameters.cmnd"
+        with open(pythia_config_output, 'w') as f:
+            f.write(out)
 
-            out += pythia_out + '\n'
+        with open(os.path.join(folder, 'runPythia.cmd'), 'w') as f:
+            with open(self.process) as pp:
+                f.write(pp.read())
             f.write(out)
 
         # for value in self.detector_hist2D.values():
