@@ -20,7 +20,7 @@ def compare_yoda(ref, tuned_dict, options=None):
         "errorbars": False,
         "ratioymin": 0.1,
         "ratioymax": 2,
-        'ratiogrid': False 
+        'ratiogrid': False
     }
 
     if options is None:
