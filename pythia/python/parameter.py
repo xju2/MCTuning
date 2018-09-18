@@ -55,7 +55,8 @@ class Parameter(object):
         return self.__dict__
 
     def to_str(self):
-        return "{} {} ({}, {}, {}), {}".format(self.id_, self.name, self.min_, self.nominal, self.max_, len(self.values))
+        return "{} {} [{}] ({}, {}, {}), {}".format(self.id_, self.name, self.nickname,
+                                                    self.min_, self.nominal, self.max_, len(self.values))
 
     def __repr__(self):
         return "Parameter {}({},{})".format(self.name, self.min_, self.max_)
@@ -64,13 +65,13 @@ class Parameter(object):
         return self.to_str()
 
     def __eq__(self, other):
-        return self.name == other.name
+        return self.nickname == other.nickname
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __hash__(self):
-            return hash((self.name))
+            return hash((self.nickname))
 
     def prof_config(self, value):
         return "{} {}".format(self.nickname, value)

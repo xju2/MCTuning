@@ -128,7 +128,6 @@ public:
 		const double weight = event.weight();
 
 		event.getLog().setLevel(Log::INFO);
-		// const Jets jets  		= apply<JetAlg>(event, "JetsReco").jetsByPt(Cuts::pT > 20*GeV && Cuts::abseta < 2.8);
 		const Jets signal_jets  = apply<JetAlg>(event, "JetsReco").jetsByPt(Cuts::pT > 30*GeV && Cuts::abseta < 2.8);
 
 		const Particles eleReco  = apply<ParticleFinder>(event, "ElectronReco").particlesByPt();
@@ -207,18 +206,12 @@ public:
 			if (dphi < min_dphi_ele) min_dphi_ele = dphi;
 		}
 
-		// bool dphi_norm = !any(isojets, deltaPhiLess(vet, 0.4));
-		// bool dphi_ele  = !any(isojets, deltaPhiLess(vetNoEle, 0.4));
 		bool dphi_norm = min_dphi_norm > 0.4;
 		bool dphi_ele  = min_dphi_ele > 0.4;
 
 		// btagging
 		Jets bjets;
 		foreach( const Jet& j, signal_jets) {
-			if( use_truth && j.bTagged() && 
-					rand()/static_cast<double>(RAND_MAX) < JET_BTAG_ATLAS_RUN1(j)) {
-				bjets.push_back(j);
-			}
 			if( j.bTagged() ){ 
 				if(use_truth || rand()/static_cast<double>(RAND_MAX) < JET_BTAG_ATLAS_RUN1(j) ) {
 					bjets.push_back(j);
@@ -244,7 +237,7 @@ public:
 		MSG_DEBUG("Number of filtered jets, electrons, muons = "
 				<< isojets.size() << ", " << isoelecs.size() << ", " << isomus.size());
 		double leading_jet_pt = isojets[0].pt();
-		double leading_jet_eta = isojets[0].eta();
+		double leading_jet_eta = isojets[0].abseta();
 
 		int region_ = 5;
 		MSG_DEBUG("Passed basic selections");
@@ -313,16 +306,16 @@ public:
 			MSG_DEBUG("Having one electron...");
 			// and with pT > 30 GeV and 1.37 < |eta| < 1.52
 			const Particle& ele = isoelecs.at(0);
-			if(ele.pt() > 30*GeV && (ele.eta() <= 1.37 || ele.eta() >= 1.52) )
+			if(ele.pt() > 30*GeV && (ele.abseta() <= 1.37 || ele.abseta() >= 1.52) )
 			{
 				double HT = 0;
 				foreach(const Jet& j, isojets){
 					HT += j.pT();
 				}
 				double mT = sqrt(2* ele.pt() * etmiss * (1 - cos(deltaPhi(ele, vet)) ));
-				double ht_ratio = etmiss/sqrt(HT);
+				double ht_ratio = etmissNoMuon/sqrt(HT);
 				MSG_DEBUG("mT:" << mT/GeV << "[GeV], " << ht_ratio 
-						<< ". MET " << etmiss/GeV << " MET-NO-ELE: " << etmissNoEle/GeV 
+						<< ". MET " << etmissNoMuon/GeV << " MET-NO-ELE: " << etmissNoEle/GeV 
 						<< ". Leading jet pT: " << leading_jet_pt/GeV); 
 				_h_enu_mT	->fill(mT/GeV, weight);
 				if( mT > 30*GeV && mT < 100*GeV && ht_ratio > 5){

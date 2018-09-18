@@ -28,31 +28,14 @@ Beams:eCM = 13000.                 ! CM energy of collision
 #PhaseSpace:pTHatMin = 50.          ! minimal pT scale in process
 
 
-! Example 2: t-tbar production.
-#Top:gg2ttbar = on                  ! g g -> t tbar
-#Top:qqbar2ttbar = on               ! q qbar -> t tbar
-
 ! Example 3: Z0 production; should set mMin.
-WeakSingleBoson:ffbar2gmZ = on     ! q qbar -> gamma*/Z0
+WeakBosonAndParton:qqbar2gmZg = on		! q qbar --> gamma*/Z0 g
+WeakBosonAndParton:qg2gmZq = on			! q g --> gamma/Z0 q
+
 23:onMode	= off 					! turn off all decay modes
 23:onIfAny	= 12 14 16				! turn on nunu decay mode
-PhaseSpace:mHatMin	= 40			! lower invariant mass
-PhaseSpace:mHatMax  = 140.			! upper invariant mass
+PhaseSpace:pTHatMin	= 200			! lower pT
 
-! Example 4: gauge boson pair production; set pTmin. Not yet complete.
-#WeakDoubleBoson:ffbar2ZW = on      ! q qbar -> Z0 W+-
-#WeakDoubleBoson:ffbar2WW = on      ! q qbar -> W+ W-
-#PhaseSpace:pTHatMin = 20.          ! minimal pT scale in process
-
-! 5) Switch on/off the key event generation steps
-#PartonLevel:MPI = off              ! no multiparton interactions
-#PartonLevel:ISR = off              ! no initial-state radiation
-#PartonLevel:FSR = off              ! no final-state radiation
-#HadronLevel:Hadronize = off        ! no hadronization
-#HadronLevel:Decay = off            ! no decays
-
-! 6) Other settings. Can be expanded as desired.
-#Tune:preferLHAPDF = off            ! use internal PDFs when LHAPDF not linked
 Tune:ee = 7                         ! use Monash 2013 Tune by Peter Skands
 Tune:pp = 14                        ! use Monash 2013 Tune by Peter Skands
 ParticleDecays:limitTau0 = on      ! set long-lived particle stable ...
@@ -67,6 +50,6 @@ PDF:pSet = 13 			! NNPDF2.3 QCD+QED LO alpha_s(M_Z) = 0.130. Will be used everyw
 #PDF:pHardSet = 13
 
 ! 8) Turn-on biased selection
-#PhaseSpace:bias2Selection = on
-#PhaseSpace:bias2SelectionPow = 4.0 ! as used in example, but ATLAS DSID:304784 uses 5.0
-#PhaseSpace:bias2SelectionRef = 100. ! to giet "resonably-sized" weights
+PhaseSpace:bias2Selection = on
+PhaseSpace:bias2SelectionPow = 4.0 ! as used in example, but ATLAS DSID:304784 uses 5.0
+PhaseSpace:bias2SelectionRef = 200. ! to giet "resonably-sized" weights
