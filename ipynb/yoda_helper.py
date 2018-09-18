@@ -3,6 +3,7 @@
 
 import yoda
 import os
+from collections import OrderedDict
 
 def compare_yoda(ref, tuned_dict, options=None):
     """
@@ -33,6 +34,7 @@ def compare_yoda(ref, tuned_dict, options=None):
     tuned = tuned_dict.values()[0]
 
     output_dir = options.get('output_dir', "output")
+    output_format = options.get('format', 'eps')
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -62,16 +64,16 @@ def compare_yoda(ref, tuned_dict, options=None):
                 print title," missed tuned data"
 
         if plotkeys.get('logY', False):
-            out_name = output_dir+"/validation_"+title+"_LogY.eps"
+            out_name = output_dir+"/validation_"+title+"_LogY."+output_format
         else:
-            out_name = output_dir+"/validation_"+title+"_LinearY.eps"
+            out_name = output_dir+"/validation_"+title+"_LinearY."+output_format
         yoda.plot(hists_list, outfile=out_name, **plotkeys)
         # break
 
 
 
 def compare_yoda_files(ref_file, tuned_dict_files, options=None):
-    tuned_dict = {}
+    tuned_dict = OrderedDict()
     ref_data = yoda.read(ref_file)
 
     for key,value in tuned_dict_files.iteritems():
