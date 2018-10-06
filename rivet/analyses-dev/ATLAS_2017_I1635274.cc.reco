@@ -24,7 +24,7 @@ public:
 
     /// Book histograms and initialise projections before the run
 	void init() {
-		use_truth = true;
+		use_truth = false;
 		int print_level = Log::INFO;
 		this->getLog().setLevel(Log::INFO);
 
@@ -132,8 +132,11 @@ public:
 
 		const Particles eleReco  = apply<ParticleFinder>(event, "ElectronReco").particlesByPt();
 		const Particles muReco   = apply<ParticleFinder>(event, "MuonReco").particlesByPt();
+
 		const Particles eleTruth = apply<IdentifiedFinalState>(event, "ElectronTruth").particlesByPt();
 		const Particles muTruth  = apply<IdentifiedFinalState>(event, "MuonTruth").particlesByPt();
+		MSG_DEBUG("Truth muons: " << muTruth.size() << ", Reco muons: " << muReco.size());
+		MSG_DEBUG("Truth electrons: " << eleTruth.size() << ", Reco electrons: " << eleReco.size());
 
 		MSG_DEBUG("Number of raw jets, electrons, muons, leptons = "
 				<< signal_jets.size() << ", " << eleTruth.size() << ", " << muTruth.size());

@@ -25,6 +25,7 @@ class Parameter(object):
         self.nominal = nominal
 
         # get a list of values of this parameter
+        # used in one-to-one and factorial DOE
         if type(values) is list:
             self.values = values
         elif type(values) is int:
@@ -36,7 +37,7 @@ class Parameter(object):
         self.nickname = nickname
         self.description = description
         self.id_ = id_
-        self.run_values = []
+        self.run_values = []  # actual values used to generate events
         self.type_ = type_
         self.other_opt = kwords
 
@@ -46,6 +47,7 @@ class Parameter(object):
 
         scale = max(find_precision(self.max_)[1],
                     find_precision(self.min_)[1],
+                    find_precision(self.nominal)[1],
                     find_precision(values)[0]
                    ) + 1
         step = (self.max_ - self.min_)/(values - 1)

@@ -10,3 +10,5 @@ add_executable(testYoda testYoda.cxx)
 target_link_libraries(testYoda YODA)
 
 add_executable(testEff testEff.cxx)
+
+add_executable(testUncertaintyList testUncertaintyList.cxx)

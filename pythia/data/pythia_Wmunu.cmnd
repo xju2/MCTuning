@@ -8,7 +8,7 @@ WeakBosonAndParton:qg2Wq = on       ! Scattering q g --> W^+- q
 WeakBosonAndParton:ffbar2Wgm = on   ! Scattering f fbar --> W^+- gamma
 WeakBosonAndParton:fgm2Wf = on      ! Scattering f gamma --> W^+- f
 24:onMode	= off 					! turn off all decay modes
-24:onIfAny	= 13 14 				! turn on enu decay mode
+24:onIfAny	= 13 14 				! turn on munu decay mode
 PhaseSpace:pTHatMin	= 200		    ! lower pT 
 
 Tune:ee = 7                         ! use Monash 2013 Tune by Peter Skands

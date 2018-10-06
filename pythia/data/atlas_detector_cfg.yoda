@@ -15,8 +15,8 @@ YLable: pT
 -10	 10	1000.	10000	0.04	0	1	0	1
 END YODA_HISTO2D_V2
 
-BEGIN YODA_HISTO2D_V2 /ATLAS/Run1/Electron/Effiency
-Path: /ATLAS/Run1/Electron/Effiency
+BEGIN YODA_HISTO2D_V2 /ATLAS/Run1/Electron/Efficiency
+Path: /ATLAS/Run1/Electron/Efficiency
 Title: atlas-run1-electron-efficiency
 Type: Histo2D
 XLabel: eta
@@ -27,8 +27,8 @@ YLable: pT
 1.5	 	 2.47	10		1000		0.85 	0 	1	0	1
 END YODA_HISTO2D_V2
 
-BEGIN YODA_HISTO2D_V2 /ATLAS/Run1/Photon/Effiency
-Path: /ATLAS/Run1/Photon/Effiency
+BEGIN YODA_HISTO2D_V2 /ATLAS/Run1/Photon/Efficiency
+Path: /ATLAS/Run1/Photon/Efficiency
 Title: atlas-run1-photon-efficiency
 Type: Histo2D
 XLabel: eta
@@ -39,8 +39,8 @@ YLable: pT
 1.5	 	 2.47	10		1000		0.85 	0 	1	0	1
 END YODA_HISTO2D_V2
 
-BEGIN YODA_HISTO2D_V2 /ATLAS/Run1/Muon/Effiency
-Path: /ATLAS/Run1/Muon/Effiency
+BEGIN YODA_HISTO2D_V2 /ATLAS/Run1/Muon/Efficiency
+Path: /ATLAS/Run1/Muon/Efficiency
 Title: atlas-run1-muon-effiency
 Type: Histo2D
 XLabel: eta
@@ -397,8 +397,8 @@ YLable: pT
 2.457    2.5    80    1000    0.859     0    1    0    1
 END YODA_HISTO2D_V2
 
-BEGIN YODA_HISTO2D_V2 /CMS/Run1/Electron/Effiency
-Path: /CMS/Run1/Electron/Effiency
+BEGIN YODA_HISTO2D_V2 /CMS/Run1/Electron/Efficiency
+Path: /CMS/Run1/Electron/Efficiency
 Title: cms-run1-electron-efficiency
 Type: Histo2D
 XLabel: eta
@@ -409,8 +409,8 @@ YLable: pT
 1.5	 	 2.5    10		1000		0.85 	0 	1	0	1
 END YODA_HISTO2D_V2
 
-BEGIN YODA_HISTO2D_V2 /CMS/Run1/Photon/Effiency
-Path: /CMS/Run1/Photon/Effiency
+BEGIN YODA_HISTO2D_V2 /CMS/Run1/Photon/Efficiency
+Path: /CMS/Run1/Photon/Efficiency
 Title: cms-run1-photon-effiency
 Type: Histo2D
 XLabel: eta
