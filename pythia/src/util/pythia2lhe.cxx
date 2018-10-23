@@ -4,12 +4,14 @@
 #include <fstream>
 #include <string.h>
 #include <map>
+#include <sstream>
 
 using namespace Pythia8;
 using namespace std;
 
 // It's the same as example:main20.cc
-int main(int argc, char** argv){
+int main(int argc, char** argv)
+{
 	// Check that correct number of command-line arguments
 	if (argc < 3) {
 		cerr << " Unexpected number of command-line arguments. \n You are"
@@ -38,9 +40,7 @@ int main(int argc, char** argv){
 
 	// Read in commands from external file.
 	pythia.readFile(argv[1]);
-	pythia.init();
 
-	pythia.settings.listChanged();
 
 	// weight strings
 	vector<string> weightStrings = pythia.settings.wvec("UncertaintyBands:List");
@@ -60,6 +60,9 @@ int main(int argc, char** argv){
 	// Open a file on which LHEF events should be stored, and write header.
 	myLHA.openLHEF(argv[2]);
 
+	pythia.init();
+	pythia.settings.listChanged();
+
 	// Store initialization info in the LHAup object.
 	myLHA.setInit();
 
@@ -74,7 +77,9 @@ int main(int argc, char** argv){
 
 	// Loop over events
 	int iAbort = 0;
-	for(int iEvent = 0; iEvent < nEvent; ++iEvent) {
+	for(int iEvent = 0; iEvent < nEvent; ++iEvent)
+	{
+		pythia.info.LHEFversionSave = 3;
 
 		// generate event
 		if(!pythia.next()) {
@@ -100,19 +105,20 @@ int main(int argc, char** argv){
 				" mergingWeight: " << mergingWeight <<
 				" eventWeight: " << eventWeight << endl;
 		}
-		if(pythia.info.getWeightsDetailedSize() != 0){
+		if(pythia.info.getWeightsDetailedSize() != 0)
+		{
 			for(std::map<string, Pythia8::LHAwgt>:: const_iterator wgt = pythia.info.rwgt->wgts.begin();
 					wgt != pythia.info.rwgt->wgts.end(); ++wgt) {
 				if(debug) {
 					cout <<"Found: " << wgt->first << " " <<endl;
 				}
 			}
-		} else{
+		} else {
 			if(debug) {
 				cout << "No detailed format" << endl;
 			}
 		}
-		
+
 		if(debug) cout << "List " << pythia.info.nWeights() << " weights: " ;
 		for(int iw = 0; iw != pythia.info.nWeights(); ++iw) {
 			if(debug) {
@@ -120,6 +126,18 @@ int main(int argc, char** argv){
 			}
 		}
 		cout << endl;
+
+
+		// Check LHAweights
+		if(pythia.info.weights) {
+			LHAweights weightsXML = *(pythia.info.weights);
+			std::ostringstream bar (std::ostringstream::out);
+			weightsXML.list(bar);
+			cout << bar.str() << endl;
+		} else {
+			cout << "No LHAweights in INFO" << endl;
+		}
+
 
 		// Store event info in the LHAup object.
 		myLHA.setEvent();
@@ -139,4 +157,5 @@ int main(int argc, char** argv){
 
 
 	return 0;
+
 }

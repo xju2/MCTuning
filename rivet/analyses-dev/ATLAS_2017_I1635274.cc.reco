@@ -130,14 +130,14 @@ public:
 		event.getLog().setLevel(Log::INFO);
 		const Jets signal_jets  = apply<JetAlg>(event, "JetsReco").jetsByPt(Cuts::pT > 30*GeV && Cuts::abseta < 2.8);
 
+		const Particles eleTruth = apply<IdentifiedFinalState>(event, "ElectronTruth").particlesByPt();
 		const Particles eleReco  = apply<ParticleFinder>(event, "ElectronReco").particlesByPt();
+
+		const Particles muTruth  = apply<IdentifiedFinalState>(event, "MuonTruth").particlesByPt();
 		const Particles muReco   = apply<ParticleFinder>(event, "MuonReco").particlesByPt();
 
-		const Particles eleTruth = apply<IdentifiedFinalState>(event, "ElectronTruth").particlesByPt();
-		const Particles muTruth  = apply<IdentifiedFinalState>(event, "MuonTruth").particlesByPt();
 		MSG_DEBUG("Truth muons: " << muTruth.size() << ", Reco muons: " << muReco.size());
 		MSG_DEBUG("Truth electrons: " << eleTruth.size() << ", Reco electrons: " << eleReco.size());
-
 		MSG_DEBUG("Number of raw jets, electrons, muons, leptons = "
 				<< signal_jets.size() << ", " << eleTruth.size() << ", " << muTruth.size());
 
@@ -189,7 +189,7 @@ public:
 		// ETmissing with no Muon nor Electron's contribution
 
 		const Vector3& vetNoEleTruth = apply<MissingMomentum>(event, "METNoEleTruth").vectorMissingEt();
-		const Vector3& vetNoEleReco  = apply<SmearedMET>(event, "METReco").vectorMissingEt();
+		const Vector3& vetNoEleReco  = apply<SmearedMET>(event, "METNoEleReco").vectorMissingEt();
 		_h_METNoEle_Truth->fill(vetNoEleTruth.mod()/GeV, weight);
 		_h_METNoEle_Reco ->fill(vetNoEleReco.mod()/GeV, weight);
 
