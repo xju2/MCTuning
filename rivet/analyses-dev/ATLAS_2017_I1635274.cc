@@ -213,13 +213,18 @@ public:
 		bool dphi_ele  = min_dphi_ele > 0.4;
 
 		// btagging
+		// analysis team uses a working point of 60% tagging efficiency
+		// corresponding to a rejection factor of approximately 1500, 35 
+		// and 180 for light-quark and gluon jets, c-jets, and τ-leptons decaying hadronically,
+		// JET_BTAG_ATLAS_RUN1 is closer than JET_BTAG_ATLAS_RUN2_MV2C20
 		Jets bjets;
 		foreach( const Jet& j, signal_jets) {
-			if( j.bTagged() ){ 
-				if(use_truth || rand()/static_cast<double>(RAND_MAX) < JET_BTAG_ATLAS_RUN1(j) ) {
-					bjets.push_back(j);
-				}
-			}
+			if(
+				(use_truth && j.bTagged()) || // was using JET_BTAG_ATLAS_RUN1, now use 
+				(!use_truth && rand()/static_cast<double>(RAND_MAX) < JET_BTAG_ATLAS_RUN1(j))
+			) {
+				bjets.push_back(j);
+			} 
 		}
 
 		// Fill Histograms for debugging

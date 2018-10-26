@@ -69,6 +69,7 @@ class Jobs:
 
         # self.nRuns = str_to_int(data['nRuns'])
         self.nRuns = self.tune.generate()[0]
+        print "parameters input:", data['parameters']
         print "total runs:", self.nRuns
         print "minimum for Professor:", self.tune.minimum_runs_for_Prof()
         if self.nRuns < self.tune.minimum_runs_for_Prof():
