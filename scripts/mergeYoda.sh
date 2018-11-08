@@ -10,7 +10,7 @@ do
 	echo $DIR
 	cd $DIR
 	echo "merging: `\ls out_*yoda | wc | awk '{print $1}'` yoda outputs"
-	yodamerge -o combined.yoda out_*yoda
+	yodamerge -o combined.yoda out*yoda
 
 	rm out_*yoda
 	rm slurm*out

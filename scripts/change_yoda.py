@@ -95,7 +95,7 @@ def ATLAS_2017_I1635274(in_file, out_file):
     """
     data = yoda.read(in_file)
     new_rivet = []
-    new_ref = []
+
     scaled_by_bin_width = ['d01', 'd03', 'd05', 'd07', 'd09']
     to_be_scaled_by_bin_width = ['d02', 'd04', 'd06', 'd08', 'd10', 'd11']
 

@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import json
 import sys
+import os
 
 import math
 import pandas as pd
@@ -11,6 +12,7 @@ import pandas as pd
 import yoda
 
 from parameter import Parameter
+from utils import find_precision
 
 import pyDOE
 
@@ -34,12 +36,8 @@ class TuneMngr:
         for value in data["variables"]:
             self.para_list.add(Parameter(**value))
 
-        self.DOE = data.get("DOE", "one-to-one")
-        if self.DOE.lower() != "factorial" and \
-           self.DOE.lower() != "one-to-one":
-            print("I don't know how to do: ", self.DOE)
-            print("but it's OK, I will just use Factorial")
-
+        self.DOE = data.get("DOE", "one-to-one").lower()
+        print("Try DOE:", self.DOE)
 
         self.summary()
 
@@ -71,24 +69,39 @@ class TuneMngr:
         para.run_values = para.values + [para.nominal]*(self.max_len - len(para.values))
 
 
-    def generate(self):
-        if self.DOE.lower() == "one-to-one":
-            self.max_len = max([len(para.values) for para in self.para_list])
-            map(self.append_one2one, self.para_list)
-
-        elif self.DOE.lower() == "factorial":
-            index_array = pyDOE.fullfact([len(para.values) for para in self.para_list])
-            for ip, para in enumerate(self.para_list):
-                para.run_values = [para.values[int(x)] for x in index_array[:, ip]]
+    def generate(self, out_name='parameters.csv'):
+        if os.path.exists(out_name):
+            self.df = pd.read_csv(out_name)
         else:
-            print("I do nothing.")
+            doe_option = self.DOE
+            if doe_option == "one-to-one":
+                self.max_len = max([len(para.values) for para in self.para_list])
+                map(self.append_one2one, self.para_list)
 
-        data = dict([(para.nickname, para.run_values) for para in self.para_list])
-        self.df = pd.DataFrame(data=data)
+            elif doe_option == "factorial":
+                index_array = pyDOE.fullfact([len(para.values) for para in self.para_list])
+                for ip, para in enumerate(self.para_list):
+                    para.run_values = [para.values[int(x)] for x in index_array[:, ip]]
+
+            elif "lhs" in doe_option:
+                nsamples = int(doe_option.split(',')[1])
+                #scales = find_precision(nsamples)[0]
+                scales = 5
+                frac_array = pyDOE.lhs(len(self.para_list), samples=nsamples) ## CDF values for norm(0, 1)
+                for ip, para in enumerate(self.para_list):
+                    para.run_values = [round(para.min_+ x*(para.max_ - para.min_), scales) for x in frac_array[:, ip]]
+
+            else:
+                print("I do nothing.")
+
+            data = dict([(para.nickname, para.run_values) for para in self.para_list])
+            self.df = pd.DataFrame(data=data)
+            self.df.to_csv(out_name, index=False)
         print("\n****Generated List of Parameters***")
         print(self.df.head())
         print("\n")
         return self.df.shape
+
 
     def get_config(self, irun):
         return "\n".join([para.config(self.df[para.nickname].iloc[irun])\

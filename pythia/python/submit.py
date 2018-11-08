@@ -251,27 +251,22 @@ class Jobs:
                 subprocess.call(cmd)
 
 
-def list_analysis():
-    return ["ATLAS_2014_I1268975", "ATLAS_2017_I1519428", "ATLAS_2017_I1635274"]
-
-
 if __name__ == "__main__":
     usage = "%prog [options] json"
     version="%prog 1.0"
     parser = OptionParser(usage=usage, description="submit jobs to generate MC events", version=version)
     parser.add_option("-s", "--submit", default=False, action="store_true", help="submit the job")
-    parser.add_option("-d", "--subdir", default=".")
+    parser.add_option("--subdir", default=".")
 
     (options,args) = parser.parse_args()
 
     if len(args) < 1:
         parser.print_help()
-        print "supported analysis:\t", list_analysis()
         exit(1)
 
     jobs = Jobs()
     jobs.subdir = options.subdir
-    if not jobs.readInputJason(args[0]):
+    if not jobs.readInputJason(os.path.join(jobs.subdir, args[0])):
         exit(1)
 
     if options.submit:

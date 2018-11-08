@@ -244,7 +244,8 @@ function pythia()
 			--with-lhapdf6=${INSTALL_DIR}/${LHAPDF_FILE_NAME} \
 			--with-root=${ROOT_DIR} \
 			--with-python=${PYTHON_DIR} \
-			--with-python-include=${PYTHON_INCLUDE_DIR}
+			--with-python-include=${PYTHON_INCLUDE_DIR} \
+			--with-gzip
 		make
 		make install
 	fi
@@ -350,7 +351,7 @@ function madgraph()
 {
 	VERSION=$1
 	if [ -z $VERSION ];then
-		VERSION="2.6.2"
+		VERSION="2.6.3.2"
 	fi
 	echo "Downloading MadGraph --> ${VERSION}"
 
@@ -370,19 +371,18 @@ function madgraph()
 	if [ ! -d $DIR_MAD ];then
 		tar xzf "${FILENAME}"
 	fi	
-	cd ${VERSION//\./_}
-
+	cd ${DIR_MAD}
 
 
 	cd ${BASE_DIR}
 }
 
 # install packages one by one...
-doup=" "
-hepmc 2.06.09  $doup
-evtgen 01.07.00
-#fastjet
-#lhapdf
+doup=""
+hepmc
+evtgen
+fastjet
+lhapdf
 pythia 8235 update
 #yoda
 #rivet
