@@ -5,17 +5,11 @@ Beams:eCM = 7000.                 ! CM energy of collision
 
 WeakBosonAndParton:qqbar2Wg = on    ! Scattering q qbar --> W^+- g.
 WeakBosonAndParton:qg2Wq = on       ! Scattering q g --> W^+- q
-# WeakBosonAndParton:ffbar2Wgm = on   ! Scattering f fbar --> W^+- gamma
-# WeakBosonAndParton:fgm2Wf = on      ! Scattering f gamma --> W^+- f
 24:onMode	= off 					! turn off all decay modes
 24:onIfAny	= 11 12 				! turn on enu decay mode
-PhaseSpace:pTHatMin	= 20		    ! lower pT 
 
 Tune:ee = 7                         ! use Monash 2013 Tune by Peter Skands
 Tune:pp = 14                        ! use Monash 2013 Tune by Peter Skands
+PDF:pSet = 13 						! NNPDF2.3 QCD+QED LO alpha_s(M_Z) = 0.130. Will be used everywhere 
 
-PDF:pSet = 13 			! NNPDF2.3 QCD+QED LO alpha_s(M_Z) = 0.130. Will be used everywhere 
-
-PhaseSpace:bias2Selection = on
-PhaseSpace:bias2SelectionPow = 4.0  ! as used in example, but ATLAS DSID:304784 uses 5.0
-PhaseSpace:bias2SelectionRef = 100. ! to get "resonably-sized" weights
+Main:numberOfEvents     = 50000

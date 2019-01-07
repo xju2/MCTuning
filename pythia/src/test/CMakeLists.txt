@@ -32,3 +32,13 @@ endif ()
 add_executable(testPythia8235MultiWeights testPythia8235MultiWeights.cxx)
 set_target_properties(testPythia8235MultiWeights PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(testPythia8235MultiWeights pythia8 HepMC)
+
+# check MadGraph
+add_executable(testMadGraph testMadGraph.cxx)
+target_link_libraries(testMadGraph pythia8)
+
+# check LHAupLHEF
+add_compile_options(-DGZIPSUPPORT)
+add_executable(testLHEF testLHEF.cxx)
+target_link_libraries(testLHEF pythia8 z)
+
