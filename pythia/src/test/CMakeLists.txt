@@ -1,3 +1,4 @@
+
 include_directories(../libjsoncpp/include)
 add_executable(testJson testJson.cxx)
 # set_target_properties(testJson PROPERTIES LINKER_LANGUAGE CXX)
@@ -13,6 +14,7 @@ add_executable(testEff testEff.cxx)
 
 add_executable(testUncertaintyList testUncertaintyList.cxx)
 
+add_compile_options(-DGZIPSUPPORT)
 # test pythia8 multiweights
 if (PYTHIA8_DIR)
 	include_directories(${PYTHIA8_DIR}/include)
@@ -37,8 +39,12 @@ target_link_libraries(testPythia8235MultiWeights pythia8 HepMC)
 add_executable(testMadGraph testMadGraph.cxx)
 target_link_libraries(testMadGraph pythia8)
 
+
 # check LHAupLHEF
-add_compile_options(-DGZIPSUPPORT)
 add_executable(testLHEF testLHEF.cxx)
 target_link_libraries(testLHEF pythia8 z)
 
+
+# merging
+add_executable(main86 main86.cxx)
+target_link_libraries(main86 pythia8 z HepMC)
