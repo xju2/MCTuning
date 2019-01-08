@@ -45,6 +45,10 @@ add_executable(testLHEF testLHEF.cxx)
 target_link_libraries(testLHEF pythia8 z)
 
 
-# merging
+# UMEPS merging
 add_executable(main86 main86.cxx)
 target_link_libraries(main86 pythia8 z HepMC)
+
+# CKKW-L merging
+add_executable(main85 main85.cxx)
+target_link_libraries(main85 pythia8 z HepMC)
