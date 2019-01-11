@@ -29,7 +29,7 @@ BASE_DIR=$PWD
 INSTALL_DIR="$BASE_DIR/Extra"
 
 
-PYTHON_DIR="/global/project/projectdirs/m1092/xju/miniconda3/envs/py2/"
+PYTHON_DIR="/global/project/projectdirs/atlas/xju/miniconda3/envs/py2/"
 PYTHON_INCLUDE_DIR="${PYTHON_DIR}/include/python2.7"
 ROOT_DIR="/global/homes/x/xju/project//xju/software/root/v6-04-16_hsg7"
 
@@ -246,7 +246,9 @@ function pythia()
 			--with-root=${ROOT_DIR} \
 			--with-python=${PYTHON_DIR} \
 			--with-python-include=${PYTHON_INCLUDE_DIR} \
-			--with-gzip
+			--with-gzip-include=/usr/include \
+			--with-gzip-lib=/usr/lib64 \
+			--with-boost=/usr/common/software/boost/1.67.0/intel/haswell
 		make
 		make install
 	fi

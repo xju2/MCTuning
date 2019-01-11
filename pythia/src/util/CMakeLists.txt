@@ -24,3 +24,8 @@ target_link_libraries(pythia pythia8 HepMC)
 add_executable(pythia2lhe pythia2lhe.cxx)
 set_target_properties(pythia2lhe PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(pythia2lhe pythia8 HepMC)
+
+# add pythia showering on LHEF
+add_executable(pythia_shower_lhe3 pythia_shower_lhe3.cxx)
+set_target_properties(pythia_shower_lhe3 PROPERTIES LINKER_LANGUAGE CXX)
+target_link_libraries(pythia_shower_lhe3 pythia8 HepMC)

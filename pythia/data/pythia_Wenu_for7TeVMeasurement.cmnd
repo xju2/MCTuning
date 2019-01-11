@@ -1,0 +1,15 @@
+Beams:idA = 2212                   ! first beam, p = 2212, pbar = -2212
+Beams:idB = 2212                   ! second beam, p = 2212, pbar = -2212
+Beams:eCM = 7000.                 ! CM energy of collision
+
+
+WeakBosonAndParton:qqbar2Wg = on    ! Scattering q qbar --> W^+- g.
+WeakBosonAndParton:qg2Wq = on       ! Scattering q g --> W^+- q
+24:onMode	= off 					! turn off all decay modes
+24:onIfAny	= 11 12 				! turn on enu decay mode
+
+Tune:ee = 7                         ! use Monash 2013 Tune by Peter Skands
+Tune:pp = 14                        ! use Monash 2013 Tune by Peter Skands
+PDF:pSet = 13 						! NNPDF2.3 QCD+QED LO alpha_s(M_Z) = 0.130. Will be used everywhere 
+
+Main:numberOfEvents     = 50000
