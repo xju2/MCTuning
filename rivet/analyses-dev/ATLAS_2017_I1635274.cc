@@ -25,8 +25,10 @@ public:
     /// Book histograms and initialise projections before the run
 	void init() {
 		use_truth = false;
-		int print_level = Log::INFO;
-		this->getLog().setLevel(Log::INFO);
+		// int print_level = Log::INFO;
+		// this->getLog().setLevel(Log::INFO);
+		int print_level = Log::DEBUG;
+		this->getLog().setLevel(Log::DEBUG);
 
 		FastJets jets(FinalState(Cuts::abseta < 4.9), FastJets::ANTIKT, 0.4);
 		SmearedJets recojets(jets, JET_SMEAR_ATLAS_RUN1);
@@ -43,10 +45,12 @@ public:
 		SmearedParticles recoEle(elecs, ELECTRON_IDEFF_ATLAS_RUN2_LOOSE, ELECTRON_SMEAR_ATLAS_RUN1);
 		recoEle.getLog().setLevel(print_level);
 		declare(recoEle, "ElectronReco");
+		MSG_DEBUG("recoEle: " << &recoEle);
 
 		SmearedParticles recoMuons(muons, MUON_EFF_ATLAS_RUN1, MUON_SMEAR_ATLAS_RUN1);
 		recoMuons.getLog().setLevel(print_level);
 		declare(recoMuons, "MuonReco");
+		MSG_DEBUG("recoMuons: " << &recoMuons);
 
 		// Missing ET for all objects
 		VisibleFinalState calofs(Cuts::abseta < 4.9);
@@ -127,7 +131,7 @@ public:
 		MSG_DEBUG("Entering...");
 		const double weight = event.weight();
 
-		event.getLog().setLevel(Log::INFO);
+		event.getLog().setLevel(Log::DEBUG);
 		const Jets signal_jets  = apply<JetAlg>(event, "JetsReco").jetsByPt(Cuts::pT > 30*GeV && Cuts::abseta < 2.8);
 
 		const Particles eleTruth = apply<IdentifiedFinalState>(event, "ElectronTruth").particlesByPt();

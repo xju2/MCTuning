@@ -5,6 +5,9 @@ import sys
 import os
 
 def get_sum(in_yoda):
+    if type(in_yoda) == yoda.core.Profile1D:
+        in_yoda = in_yoda.mkScatter()
+
     if type(in_yoda) == yoda.core.Scatter2D:
         return sum([p.y*(p.xMax-p.xMin) for p in in_yoda.points])
     else: ### yoda.core.Hist1D
@@ -23,10 +26,10 @@ def plot(inputs, options=None):
         "ylabel": "Events / Bin",
         "logY": True,
         "title": "",
-        "ratioylabel": "Tuned / Ref",
+        "ratioylabel": "MC / Ref",
         "errorbars": False,
-        "ratioymin": 0.1,
-        "ratioymax": 2,
+        "ratioymin": 0.8,
+        "ratioymax": 1.2,
         'ratiogrid': False,
         'LegendFontSize': 'large'
     }
@@ -64,6 +67,8 @@ def plot(inputs, options=None):
                 hist = data[key]
 
             hist.setAnnotation('Title', in_file[0])
+            if type(hist) == yoda.core.Profile1D:
+                hist = hist.mkScatter()
             hist.setAnnotation('nEvents', get_sum(hist))
 
             hists_list.append(hist)
@@ -71,7 +76,8 @@ def plot(inputs, options=None):
         title = key.split('/')[-1]
         plotkeys['xlabel'] = options[title][0] if title in options else title
         plotkeys['logY'] = options[title][1] if title in options else plotkeys['logY']
-
+        if title in options and len(options[title]) > 2:
+            plotkeys['ylabel'] = options[title][2]
 
         if plotkeys.get('logY', False):
             out_name = output_dir+"/validation_"+title+"_LogY.pdf"
@@ -84,6 +90,7 @@ def plot(inputs, options=None):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
+        #print(os.path.basename(sys.argv[0]), " ref_data tuned_data")
         print(os.path.basename(sys.argv[0]), " config.json")
         exit(1)
 
