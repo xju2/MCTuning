@@ -25,6 +25,7 @@ def plot(inputs, options=None):
         "xlabel": "",
         "ylabel": "Events / Bin",
         "logY": True,
+        "logX": False,
         "title": "",
         "ratioylabel": "MC / Ref",
         "errorbars": False,
@@ -78,6 +79,8 @@ def plot(inputs, options=None):
         plotkeys['logY'] = options[title][1] if title in options else plotkeys['logY']
         if title in options and len(options[title]) > 2:
             plotkeys['ylabel'] = options[title][2]
+
+        plotkeys['logX'] = options[title][3] if title in options and len(options[title]) > 3 else plotkeys['logX']
 
         if plotkeys.get('logY', False):
             out_name = output_dir+"/validation_"+title+"_LogY.pdf"

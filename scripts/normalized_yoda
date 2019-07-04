@@ -15,7 +15,7 @@ def normalize_hist1D(in_file, out_file):
     data = yoda.read(in_file)
     new_rivet = []
     for key, value in data.iteritems():
-        if value.getAnnotation('Type') == "Histo1D":
+        if value.annotation('Type') == "Histo1D":
             value.normalize()
 
         new_rivet.append(value)
