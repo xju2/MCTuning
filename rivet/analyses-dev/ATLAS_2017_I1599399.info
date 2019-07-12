@@ -1,0 +1,40 @@
+Name: ATLAS_2017_I1599399
+Year: 2017
+Summary: <A search for new phenomena in final states with an energetic jet and large missing transverse momentum. The search uses proton-proton collision data corresponding to an integrated luminosity of 36.1 fb$^{-1}$ at a center-of-mass energy of 13 TeV collected in 2015 and 2016 with the ATLAS detector at the LHC.>
+Experiment: ATLAS
+Collider: LHC
+InspireID: 1599399
+Status: UNVALIDATED
+Authors:
+ - ATLAS Collaboration
+References:
+ - 'JHEP 01 (2018) 126'
+ - '10.1007/JHEP01(2018)126'
+ - 'arXiv:1711.03301'
+RunInfo: <BSM signal events>
+NeedCrossSection: no
+Beams: [p+, p+]
+Energies: [13000]
+Description:
+  '<A search for new phenomena in final states with an energetic jet and large missing transverse momentum. The search uses proton-proton collision data corresponding to an integrated luminosity of 36.1 fb$^{-1}$ at a center-of-mass energy of 13 TeV collected in 2015 and 2016 with the ATLAS detector at the LHC. Events are required to have at least one jet with a transverse momentum above 250 GeV and no leptons (electron or muon). Several signal regions are considered with increasing requirements on the missing transverse momentum above 250 GeV. Good agreement is observed between the number of events in data and SM predictions. The results are translated into exclusion limits in models with pair-produced weakly interacting dark-matter candidates, large extra spatial dimensions, and supersymmetric particles in several compressed scenarios.>'
+BibKey: Aaboud:2017phn
+BibTeX: '@article{Aaboud:2017phn,
+      author         = "Aaboud, Morad and others",
+      title          = "{Search for dark matter and other new phenomena in events
+                        with an energetic jet and large missing transverse
+                        momentum using the ATLAS detector}",
+      collaboration  = "ATLAS",
+      journal        = "JHEP",
+      volume         = "01",
+      year           = "2018",
+      pages          = "126",
+      doi            = "10.1007/JHEP01(2018)126",
+      eprint         = "1711.03301",
+      archivePrefix  = "arXiv",
+      primaryClass   = "hep-ex",
+      reportNumber   = "CERN-EP-2017-230",
+      SLACcitation   = "%%CITATION = ARXIV:1711.03301;%%"
+}'
+ToDo:
+ - Implement the analysis, test it, remove this ToDo, and mark as VALIDATED :-)
+

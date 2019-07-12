@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+
+# change format of HepData: ATLAS_2014_I1268975 to match those generated from Rivet
+
+from __future__ import print_function
+import yoda
+import sys
+import re
+import math
+
+def normalize_hist1D(in_file, out_file):
+    """
+    Normalize all Hist1D to area=1
+    """
+    data = yoda.read(in_file)
+    new_rivet = []
+    for key, value in data.iteritems():
+        if value.annotation('Type') == "Histo1D":
+            value.normalize()
+
+        new_rivet.append(value)
+    yoda.write(new_rivet, out_file)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print(sys.argv[0],"data.yoda newdata.yoda")
+        exit(1)
+
+    normalize_hist1D(sys.argv[1], sys.argv[2])
