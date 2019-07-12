@@ -52,3 +52,7 @@ target_link_libraries(main86 pythia8 z HepMC)
 # CKKW-L merging
 add_executable(main85 main85.cxx)
 target_link_libraries(main85 pythia8 z HepMC)
+
+# Multiweights in pythia
+add_executable(main37 main37.cxx)
+target_link_libraries(main37 pythia8 z HepMC)
