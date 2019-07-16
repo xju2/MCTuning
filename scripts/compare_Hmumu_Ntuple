@@ -1,0 +1,184 @@
+#!/usr/bin/env python
+"""A script to compare Hmumu Ntuples
+"""
+from __future__ import print_function
+from __future__ import division
+
+import ROOT
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+import numpy as np
+import itertools
+
+tree_name = "DiMuonNtuple"
+def pairwise(iterable):
+  """s -> (s0,s1), (s1,s2), (s2, s3), ..."""
+  a, b = itertools.tee(iterable)
+  next(b, None)
+  return zip(a, b)
+
+def process_file(file_name):
+    file = ROOT.TFile.Open(file_name)
+    tree = file.Get(tree_name)
+    branch_names = [x.GetName() for x in tree.GetListOfBranches()
+                   if "Weight" not in x.GetName() and "Sys" not in x.GetName()]
+
+    nentries = tree.GetEntries()
+    print("total events:", nentries)
+    n_max = nentries
+    scale = 1
+    if nentries > n_max:
+        scale = n_max/nentries
+        nentries = n_max
+
+    weights = []
+    event_info = np.zeros((nentries, len(branch_names)))
+    for ientry in range(nentries):
+        tree.GetEntry(ientry)
+        weights.append(tree.McEventWeight)
+        event_info[ientry] = [getattr(tree, name) for name in branch_names]
+
+    # get Luminosity
+    lumi = file.Get("lumi").GetBinContent(1)
+    print("{} with lumi {:.2f}".format(file_name,lumi))
+    file.Close()
+    return (weights, event_info, lumi*scale)
+
+
+def plot(hists, weights, luminosities,
+         xlabel, ylabel, tag_names, outname, **plot_options):
+    if len(hists) < 2:
+        return False
+
+    plt.clf()
+    fig, (ax0, ax1) = plt.subplots(2, 1, figsize=(10, 12), sharex=True, gridspec_kw={'height_ratios':[4, 1]})
+    fig.subplots_adjust(hspace=0)
+
+    tot = hists[0]
+    base_lumi = luminosities[0]
+    try:
+        val_tot, bins, _ = ax0.hist(tot, weights=weights[0],
+                                    label=tag_names[0], **plot_options)
+    except ValueError:
+        print(xlabel)
+        return
+
+    val_sels = []
+    for ih, sel in enumerate(hists[1:]):
+        scale = base_lumi/luminosities[ih+1]
+        val_sel, bins, _ = ax0.hist(sel, weights=np.array(weights[ih+1])*scale,
+                                    label=tag_names[ih+1], **plot_options)
+        val_sels.append(val_sel)
+
+    ax0.legend(fontsize=16)
+    ax0.set_ylabel(ylabel, fontsize=16)
+
+    xvals = [0.5*(x[0]+x[1]) for x in pairwise(bins)][1:]
+    ratios = []
+    for ih,val_sel in enumerate(val_sels):
+        ratio = [x/y if y != 0 else 0. for x,y in zip(val_sel, val_tot)][:-1]
+        ax1.plot(xvals, ratio, 'o', label=tag_names[ih+1], lw=2)
+
+    ax1.set_xlabel(xlabel, fontsize=16)
+    ax1.set_ylabel('ratio', fontsize=16)
+
+    plt.savefig(outname)
+
+def get_hist_opt(hist_name):
+    bins, label, islog = None, None, None
+    if "PT" in hist_name:
+        islog = True
+        if "Jet" in hist_name:
+            bins = np.linspace(20, 220, 100)
+            label = "Events / 2 GeV"
+        else:
+            bins = np.linspace(10, 110, 100)
+            label = "Events / 1 GeV"
+
+    if "Eta" in hist_name:
+        islog = False
+        bins = np.linspace(-3, 3, 60)
+        label = "Events / 0.1"
+
+    if "Phi" in hist_name:
+        islog = False
+        bins = np.linspace(-3.2, 3.2, 64)
+        label = "Events / 0.1"
+
+    if "Charge" in hist_name:
+        islog = False
+        bins = np.linspace(-1.5, 1.5, 3)
+        label = "Events"
+
+    if "Minv" in hist_name:
+        islog = True
+        bins = np.linspace(55, 165, 110)
+        label = "Events"
+
+    return (bins, label, islog)
+
+
+if __name__ == "__main__":
+    import argparse
+    import os
+    import yaml
+
+    parser = argparse.ArgumentParser(description='Compare two Hmumu Ntuples')
+    add_arg = parser.add_argument
+    add_arg('config_name', type=str, help='config file')
+
+    args = parser.parse_args()
+
+    assert(os.path.exists(args.config_name))
+    with open(args.config_name) as f:
+        if hasattr(yaml, 'FullLoader'):
+            config = yaml.load(f, Loader=yaml.FullLoader)
+        else:
+            config = yaml.load(f)
+
+    out_dir = config['outdir']
+    try:
+        os.makedirs(out_dir)
+    except:
+        pass
+
+    input_config = config['inputs']
+    tag_names = input_config.keys()
+    weights = []
+    histograms = []
+    luminosities = []
+    for tag_name in tag_names:
+        file_name = input_config[tag_name]
+        res = process_file(file_name)
+        weights.append(res[0])
+        histograms.append(res[1])
+        luminosities.append(res[2])
+
+    ## get branch names
+    file_name = input_config[tag_names[0]]
+    tfile = ROOT.TFile.Open(file_name)
+    tree = tfile.Get(tree_name)
+    branch_names = [x.GetName() for x in tree.GetListOfBranches()
+                   if "Weight" not in x.GetName() and "Sys" not in x.GetName()]
+
+    n_obs = len(branch_names)
+    print("total {} observables".format(n_obs))
+    for ihist in range(n_obs):
+        hists = [histograms[x][:,ihist].tolist() for x in range(len(tag_names))]
+
+        hist_name = branch_names[ihist]
+        outname = os.path.join(out_dir, "{}.pdf".format(hist_name))
+        bins, ylabel, islog = get_hist_opt(hist_name)
+        plot_options = {
+            'bins': bins,
+            'histtype': 'step',
+            'lw': 2,
+            'log': islog,
+            'density': False
+        }
+        xlabel = hist_name
+        ylabel = ylabel
+        plot(hists, weights, luminosities, xlabel, ylabel, tag_names, outname, **plot_options)
