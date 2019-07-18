@@ -22,7 +22,8 @@
 which python
 which gcc
 
-EIGEN3_INCLUDE_DIR="/global/homes/x/xju/.local/Cellar/eigen3/include/eigen3"
+#EIGEN3_INCLUDE_DIR="/global/homes/x/xju/.local/Cellar/eigen3/include/eigen3"
+EIGEN3_INCLUDE_DIR="/usr/local/Cellar/eigen/3.3.4/include/eigen3"
 
 BASE_DIR=$PWD
 INSTALL_DIR="$BASE_DIR/Extra"
@@ -201,7 +202,7 @@ function lhapdf()
 
 	INSTALL="${INSTALL_DIR}/${LHAPDF_FILE_NAME}"
 	if [[ $2 == "update" ]] || [ ! -e ${INSTALL} ]; then
-		./configure --prefix=${INSTALL}
+		./configure --prefix=${INSTALL} --disable-python
 		make
 		make install
 	fi
@@ -383,7 +384,7 @@ function madgraph()
 doup=""
 hepmc
 evtgen
-fastjet
+fastjet 3.3.0 "update"
 lhapdf
 pythia 8235 update
 #yoda
