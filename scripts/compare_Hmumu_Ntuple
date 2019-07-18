@@ -13,6 +13,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 
+import multiprocessing as mp
+from functools import partial
+
 tree_name = "DiMuonNtuple"
 def pairwise(iterable):
   """s -> (s0,s1), (s1,s2), (s2, s3), ..."""
@@ -20,26 +23,73 @@ def pairwise(iterable):
   next(b, None)
   return zip(a, b)
 
-def process_file(file_name):
+branches = [
+    "Truth_Minv_MuMu",
+    "Truth_Eta_Lead_Jet", "Truth_Phi_Lead_Jet", "Truth_PT_Lead_Jet",
+    "Truth_Eta_Sub_Jet", "Truth_Phi_Sub_Jet", "Truth_PT_Sub_Jet",
+    "Truth_Eta_Lead_Muon", "Truth_Phi_Lead_Muon", "Truth_PT_Lead_Muon",
+    "Truth_Eta_Sub_Muon", "Truth_Phi_Sub_Muon", "Truth_PT_Sub_Muon",
+    "Truth_Charge_Lead_Muon",
+    "Muons_Charge_Lead",
+    "Muons_CosThetaStart",
+    "Muons_Eta_Lead", "Muons_Phi_Lead", "Muons_PT_Lead",
+    "Muons_Eta_Sub", "Muons_Phi_Sub", "Muons_PT_Sub",
+    "Leading_Jet_Eta", "Leading_Jet_Phi", "Leading_Jet_PT",
+    "Sub_Jet_Eta", "Sub_Jet_Phi", "Sub_Jet_PT",
+    "Event_MET", "Event_MET_phi"
+]
+
+excluded_branch = ["Jets_PT", "Jets_Eta", "Jets_Phi"]
+def get_branches(tree):
+    return [x.GetName() for x in tree.GetListOfBranches()
+            if "Weight" not in x.GetName()
+            and "Sys" not in x.GetName()
+            and x.GetName() not in excluded_branch
+           ]
+
+def get_evt_info(entry_ids, file_name):
     file = ROOT.TFile.Open(file_name)
     tree = file.Get(tree_name)
-    branch_names = [x.GetName() for x in tree.GetListOfBranches()
-                   if "Weight" not in x.GetName() and "Sys" not in x.GetName()]
+    branch_names = get_branches(tree)
+    tree.SetBranchStatus("*", 0)
+    for branch_name in branch_names:
+        tree.SetBranchStatus(branch_name, 1)
 
+    n_max = len(entry_ids)
+    weights = np.zeros(n_max)
+    event_info = np.zeros((n_max, len(branch_names)))
+    for ii, ientry in enumerate(entry_ids):
+        tree.GetEntry(ientry)
+        weights[ii] = tree.McEventWeight
+        event_info[ii] = [getattr(tree, name) for name in branch_names]
+
+    file.Close()
+    return (weights,event_info)
+
+def process_file(file_name):
+    n_workers = 4
+
+    file = ROOT.TFile.Open(file_name)
+    tree = file.Get(tree_name)
     nentries = tree.GetEntries()
     print("total events:", nentries)
-    n_max = nentries
-    scale = 1
-    if nentries > n_max:
-        scale = n_max/nentries
-        nentries = n_max
+    entries = np.arange(nentries)
+    scale = 1.
 
-    weights = []
-    event_info = np.zeros((nentries, len(branch_names)))
-    for ientry in range(nentries):
-        tree.GetEntry(ientry)
-        weights.append(tree.McEventWeight)
-        event_info[ientry] = [getattr(tree, name) for name in branch_names]
+    # not happy with the randomness
+    #n_max = 10000
+    #entries = np.random.choice(entries, size=n_max).tolist()
+    #scale = n_max/nentries
+
+    entry_ids = [x.tolist() for x in np.array_split(entries, n_workers)]
+
+    ## start multiprocessing
+    pool = mp.Pool(n_workers)
+    pp_func=partial(get_evt_info, file_name=file_name)
+    all_results = pool.map(pp_func, entry_ids)
+
+    weights = np.concatenate([x[0] for x in all_results])
+    event_info = np.concatenate([x[1] for x in all_results])
 
     # get Luminosity
     lumi = file.Get("lumi").GetBinContent(1)
@@ -69,8 +119,13 @@ def plot(hists, weights, luminosities,
     val_sels = []
     for ih, sel in enumerate(hists[1:]):
         scale = base_lumi/luminosities[ih+1]
-        val_sel, bins, _ = ax0.hist(sel, weights=np.array(weights[ih+1])*scale,
-                                    label=tag_names[ih+1], **plot_options)
+        try:
+            val_sel, bins, _ = ax0.hist(sel, weights=np.array(weights[ih+1])*scale,
+                                        label=tag_names[ih+1], **plot_options)
+        except ValueError:
+            print(tag_names[ih+1], outname)
+            val_sel = [0.]*len(val_tot)
+
         val_sels.append(val_sel)
 
     ax0.legend(fontsize=16)
@@ -90,22 +145,25 @@ def plot(hists, weights, luminosities,
 def get_hist_opt(hist_name):
     bins, label, islog = None, None, None
     if "PT" in hist_name:
-        islog = True
+        islog = False
         if "Jet" in hist_name:
-            bins = np.linspace(20, 220, 100)
-            label = "Events / 2 GeV"
+            bins = np.linspace(20, 320, 100)
+            label = "Events / 3 GeV"
         else:
             bins = np.linspace(10, 110, 100)
             label = "Events / 1 GeV"
 
     if "Eta" in hist_name:
         islog = False
-        bins = np.linspace(-3, 3, 60)
-        label = "Events / 0.1"
+        if "Jet" in hist_name:
+            bins = np.linspace(-5, 5, 51)
+        else:
+            bins = np.linspace(-3, 3, 31)
+        label = "Events / 0.2"
 
     if "Phi" in hist_name:
         islog = False
-        bins = np.linspace(-3.2, 3.2, 64)
+        bins = np.linspace(-3.2, 3.2, 65)
         label = "Events / 0.1"
 
     if "Charge" in hist_name:
@@ -116,7 +174,12 @@ def get_hist_opt(hist_name):
     if "Minv" in hist_name:
         islog = True
         bins = np.linspace(55, 165, 110)
-        label = "Events"
+        label = "Events / 1 GeV"
+
+    if "MET" in hist_name:
+        islog = False
+        bins = np.linspace(0, 150, 30)
+        label = "Events / 5 GeV"
 
     return (bins, label, islog)
 
@@ -161,8 +224,7 @@ if __name__ == "__main__":
     file_name = input_config[tag_names[0]]
     tfile = ROOT.TFile.Open(file_name)
     tree = tfile.Get(tree_name)
-    branch_names = [x.GetName() for x in tree.GetListOfBranches()
-                   if "Weight" not in x.GetName() and "Sys" not in x.GetName()]
+    branch_names = get_branches(tree)
 
     n_obs = len(branch_names)
     print("total {} observables".format(n_obs))
