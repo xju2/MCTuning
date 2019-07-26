@@ -19,14 +19,6 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  // Check that the provided input name corresponds to an existing file.
-  ifstream is(argv[1]);
-  if (!is) {
-    cerr << " Command-line file " << argv[1] << " was not found. \n"
-         << " Program stopped! " << endl;
-    return 1;
-  }
-
   // Confirm that external files will be used for input and output.
   cout << "\n >>> PYTHIA settings will be read from file " << argv[1]
        << " <<< \n >>> HepMC events will be written to file "
@@ -36,15 +28,20 @@ int main(int argc, char** argv) {
 	// Set up pythia to hepmc object
 	HepMC::Pythia8ToHepMC ToHepMC;
 	HepMC::IO_GenEvent ascii_io(argv[2], std::ios::out);
+
+	// Switch off warnings for parton-level events.
+	ToHepMC.set_free_parton_exception(false);
+
 	// Generator
 	Pythia pythia;
-
-	// Read in commands from external file.
+	// Initialize Les Houches Event File run. List initialization information.
 	pythia.readFile(argv[1]);
+	// pythia.readString("Beams:frameType = 4");
+	// pythia.readString("Beams:LHEF = "+string(argv[1]));
+
 
 	Event& event = pythia.event;
 
-	
 	// check other options
 	const char* tune_file = NULL;
 	for(int i = 3; i < argc; i++){
@@ -88,6 +85,13 @@ int main(int argc, char** argv) {
 		}
 
 		HepMC::GenEvent* hepmcevt = new HepMC::GenEvent();
+		double evtweight = pythia.info.weight();
+		double weight = pythia.info.mergingWeight();
+		if(iEvent < 20) {
+			cout <<  " event weight: " << evtweight <<" merging weight: " << weight << endl;
+		}
+		//weight *= evtweight;
+		//hepmcevt->weights().push_back(weight);
 		ToHepMC.fill_next_event(pythia, hepmcevt);
 
 		// write the HepMC event to file. Done with it.

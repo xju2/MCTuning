@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 	pythia.init();
 	
 	// show settings
-	pythia.settings.listChanged();
+	// pythia.settings.listChanged();
 	// pythia.particleData.listChanged();
 
 	// Loop over events
@@ -80,6 +80,8 @@ int main(int argc, char** argv) {
 		}
 
 		HepMC::GenEvent* hepmcevt = new HepMC::GenEvent();
+		double weight = pythia.info.mergingWeight();
+		double evtweight = pythia.info.weight();
 		ToHepMC.fill_next_event(pythia, hepmcevt);
 
 		// write the HepMC event to file. Done with it.

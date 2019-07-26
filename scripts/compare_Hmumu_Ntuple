@@ -15,8 +15,27 @@ import numpy as np
 import itertools
 
 import time
+from tqdm import tqdm
+
+import multiprocessing as mp
+from functools import partial
 
 tree_name = "DiMuonNtuple"
+
+import yaml
+import collections
+_mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
+
+def dict_representer(dumper, data):
+      return dumper.represent_mapping(_mapping_tag, data.iteritems())
+
+def dict_constructor(loader, node):
+    return collections.OrderedDict(loader.construct_pairs(node))
+
+yaml.add_representer( collections.OrderedDict , dict_representer )
+yaml.add_constructor( _mapping_tag, dict_constructor )
+
+
 def pairwise(iterable):
   """s -> (s0,s1), (s1,s2), (s2, s3), ..."""
   a, b = itertools.tee(iterable)
@@ -26,22 +45,25 @@ def pairwise(iterable):
 branches = [
     "McEventWeight",
     "Truth_Minv_MuMu",
-    "Truth_Eta_Lead_Jet", "Truth_Phi_Lead_Jet", "Truth_PT_Lead_Jet",
-    "Truth_Eta_Sub_Jet", "Truth_Phi_Sub_Jet", "Truth_PT_Sub_Jet",
+    #"Truth_Eta_Lead_Jet", "Truth_Phi_Lead_Jet", "Truth_PT_Lead_Jet",
+    #"Truth_Eta_Sub_Jet", "Truth_Phi_Sub_Jet", "Truth_PT_Sub_Jet",
     "Truth_Eta_Lead_Muon", "Truth_Phi_Lead_Muon", "Truth_PT_Lead_Muon",
     "Truth_Eta_Sub_Muon", "Truth_Phi_Sub_Muon", "Truth_PT_Sub_Muon",
-    "Truth_Charge_Lead_Muon",
+    #"Truth_Charge_Lead_Muon",
     "Muons_Charge_Lead",
     "Muons_CosThetaStar",
+    "Muons_Minv_MuMu",
+    "Muons_Minv_MuMu_Fsr",
+    "Muons_Minv_MuMu_Sigma",
     "Muons_Eta_Lead", "Muons_Phi_Lead", "Muons_PT_Lead",
     "Muons_Eta_Sub", "Muons_Phi_Sub", "Muons_PT_Sub",
-    "Leading_Jet_Eta", "Leading_Jet_Phi", "Leading_Jet_PT",
-    "Sub_Jet_Eta", "Sub_Jet_Phi", "Sub_Jet_PT",
-    "Event_MET", "Event_MET_phi",
+    "Jets_Eta_Lead", "Jets_Phi_Lead", "Jets_PT_Lead",
+    "Jets_Eta_Sub", "Jets_Phi_Sub", "Jets_PT_Sub",
+    "Event_MET",
+    #"Event_MET_Phi", ##wrong naming
 ]
 
 def process_file(file_name):
-    n_workers = 4
 
     rfile = ROOT.TFile.Open(file_name)
     tree = rfile.Get(tree_name)
@@ -49,13 +71,22 @@ def process_file(file_name):
     nentries = tree.GetEntries()
     time_now = time.time()
     # event_info is 1-dimention array, each record is np.void
-    event_info = tree2array(tree, branches=branches)
+    event_info = tree2array(tree,
+                            branches=branches,
+                            selection="Truth_Minv_MuMu > 100 && Truth_PT_Lead_Muon > 27"
+                           )
     time_past = time.time() - time_now
-    print("read {} events costs: {:.1f} seconds".format(nentries, time_past))
 
     # get Luminosity
-    lumi = rfile.Get("lumi").GetBinContent(1)
-    print("{} with lumi {:.2f}".format(file_name,lumi))
+    lumi = rfile.Get("lumi")
+    if lumi:
+        lumi = lumi.GetBinContent(1)
+    else:
+        lumi = 139000
+
+    print("{}: read {} events costs: {:.1f} seconds, with {} pb-1.".format(
+        file_name, nentries, time_past, lumi)
+    )
     rfile.Close()
     return (event_info, lumi)
 
@@ -78,9 +109,10 @@ def plot(hists, weights, luminosities,
         print(xlabel)
         return
 
-    val_sels = []
+    val_sels = [val_tot]
     for ih, sel in enumerate(hists[1:]):
         scale = base_lumi/luminosities[ih+1]
+        # print("{} has a scale factor of {}".format(tag_names[ih+1], scale))
         try:
             val_sel, bins, _ = ax0.hist(sel, weights=np.array(weights[ih+1])*scale,
                                         label=tag_names[ih+1], **plot_options)
@@ -95,14 +127,19 @@ def plot(hists, weights, luminosities,
 
     xvals = [0.5*(x[0]+x[1]) for x in pairwise(bins)][1:]
     ratios = []
+    y_max, y_min = 0.5, 2
     for ih,val_sel in enumerate(val_sels):
         ratio = [x/y if y != 0 else 0. for x,y in zip(val_sel, val_tot)][:-1]
-        ax1.plot(xvals, ratio, 'o', label=tag_names[ih+1], lw=2)
+        y_max = max([m for m in ratio if m < 2] + [y_max])
+        y_min = min([m for m in ratio if m > 0.5] + [y_min])
+        ax1.plot(xvals, ratio, 'o', label=tag_names[ih], lw=2)
 
     ax1.set_xlabel(xlabel, fontsize=16)
     ax1.set_ylabel('ratio', fontsize=16)
+    ax1.set_ylim(y_min, y_max)
 
     plt.savefig(outname)
+    plt.close('all')
 
 def get_hist_opt(hist_name):
     bins, label, islog = None, None, None
@@ -134,8 +171,11 @@ def get_hist_opt(hist_name):
         label = "Events"
 
     if "Minv" in hist_name:
-        islog = True
-        bins = np.linspace(55, 165, 110)
+        islog = False
+        if "Sigma" in hist_name:
+            bins = np.linspace(0, 80, 80)
+        else:
+            bins = np.linspace(55, 165, 110)
         label = "Events / 1 GeV"
 
     if "MET" in hist_name:
@@ -145,11 +185,30 @@ def get_hist_opt(hist_name):
 
     return (bins, label, islog)
 
+def make_plots(branch_name, histograms, tag_names):
+    if branch_name == "McEventWeight":
+        return
+
+    hists = [histograms[x][branch_name].tolist() for x in range(len(tag_names))]
+    weights = [histograms[x]["McEventWeight"].tolist() for x in range(len(tag_names))]
+
+    outname = os.path.join(out_dir, "{}.pdf".format(branch_name))
+    bins, ylabel, islog = get_hist_opt(branch_name)
+    plot_options = {
+        'bins': bins,
+        'histtype': 'step',
+        'lw': 2,
+        'log': islog,
+        'density': True
+    }
+    xlabel = branch_name
+    ylabel = ylabel
+    plot(hists, weights, luminosities, xlabel, ylabel, tag_names, outname, **plot_options)
+
 
 if __name__ == "__main__":
     import argparse
     import os
-    import yaml
 
     parser = argparse.ArgumentParser(description='Compare two Hmumu Ntuples')
     add_arg = parser.add_argument
@@ -170,36 +229,24 @@ if __name__ == "__main__":
     except:
         pass
 
-    input_config = config['inputs']
-    tag_names = input_config.keys()
+    tag_names = config['input_names']
+    file_names = config['input_files']
+    print(tag_names)
+    print(file_names)
     histograms = []
     luminosities = []
-    for tag_name in tag_names:
-        file_name = input_config[tag_name]
+    for file_name,tag_name in zip(file_names, tag_names):
         res = process_file(file_name)
         histograms.append(res[0])
         luminosities.append(res[1])
 
     ## get branch names
-    file_name = input_config[tag_names[0]]
     n_obs = len(branches)
     print("total {} observables".format(n_obs))
-    for branch_name in branches:
-        if branch_name == "McEventWeight":
-            continue
-        hists = [histograms[x][branch_name].tolist() for x in range(len(tag_names))]
-        weights = [histograms[x]["McEventWeight"].tolist() for x in range(len(tag_names))]
+    for branch_name in tqdm(branches):
+        make_plots(branch_name, histograms, tag_names)
 
-        hist_name = branch_name
-        outname = os.path.join(out_dir, "{}.pdf".format(hist_name))
-        bins, ylabel, islog = get_hist_opt(hist_name)
-        plot_options = {
-            'bins': bins,
-            'histtype': 'step',
-            'lw': 2,
-            'log': islog,
-            'density': False
-        }
-        xlabel = hist_name
-        ylabel = ylabel
-        plot(hists, weights, luminosities, xlabel, ylabel, tag_names, outname, **plot_options)
+    #n_workers = 20
+    #pool = mp.Pool(processes=n_workers)
+    #pp_func = partial(make_plots, histograms=histograms, tag_names=tag_names)
+    #pool.map(pp_func, branches)

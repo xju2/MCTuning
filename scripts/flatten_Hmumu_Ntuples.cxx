@@ -9,9 +9,35 @@ int flatten(const char* in_file_name, const char* out_file_name)
 	TFile* in_file = TFile::Open(in_file_name, "READ");
 	const char* tree_name = "DiMuonNtuple";
 	TTree* oldtree = (TTree*) in_file->Get(tree_name);
+	// disbale all branches and only enable a bunch...
+	// oldtree->SetBranchStatus("*", 0);
+	// oldtree->SetBranchStatus("Muons_Charge_Lead", 1);
+	// oldtree->SetBranchStatus("Muons_Minv_MuMu", 1);
+	// oldtree->SetBranchStatus("Muons_PT_Lead", 1);
+	// oldtree->SetBranchStatus("Muons_Eta_Lead", 1);
+	// oldtree->SetBranchStatus("Muons_Phi_Lead", 1);
+	// oldtree->SetBranchStatus("Muons_PT_Sub", 1);
+	// oldtree->SetBranchStatus("Muons_Eta_Sub", 1);
+	// oldtree->SetBranchStatus("Muons_Phi_Sub", 1);
+	// oldtree->SetBranchStatus("Muons_Minv_MuMu_Fsr", 1);
+	// oldtree->SetBranchStatus("Muons_Minv_MuMu_Sigma", 1);
+	// oldtree->SetBranchStatus("Muons_Minv_MuMu_Fsr_Sigma", 1);
+	// oldtree->SetBranchStatus("Muons_CosThetaStar", 1);
+	// oldtree->SetBranchStatus("FSR_Et", 1);
+	// oldtree->SetBranchStatus("FSR_Eta", 1);
+	// oldtree->SetBranchStatus("FSR_Phi", 1);
+	// oldtree->SetBranchStatus("Event_MET", 1);
+	// oldtree->SetBranchStatus("Event_MET_Phi", 1);
+	// oldtree->SetBranchStatus("Jets_PT", 1);
+	// oldtree->SetBranchStatus("Jets_Eta", 1);
+	// oldtree->SetBranchStatus("Jets_Phi", 1);
+	// oldtree->SetBranchStatus("Jets_E", 1);
+
 	Long64_t nentries = oldtree->GetEntries();
 	TH1D* lumi = (TH1D*) in_file->Get("lumi");
-	lumi->SetDirectory(0);
+	if(lumi) {
+		lumi->SetDirectory(0);
+	}
 
 	vector<float>* jets_pt = new vector<float>();
 	vector<float>* jets_eta = new vector<float>();
@@ -24,14 +50,16 @@ int flatten(const char* in_file_name, const char* out_file_name)
 	TTree* newtree = oldtree->CloneTree(0);
 	float leading_jet_pT, leading_jet_eta, leading_jet_phi;
 	float sub_jet_pT, sub_jet_eta, sub_jet_phi;
-	lumi->Write();
+	if (lumi){
+		lumi->Write();
+	}
 
-	newtree->Branch("Leading_Jet_PT", &leading_jet_pT, "Leading_Jet_PT/F");
-	newtree->Branch("Leading_Jet_Eta", &leading_jet_eta, "Leading_Jet_Eta/F");
-	newtree->Branch("Leading_Jet_Phi", &leading_jet_phi, "Leading_Jet_Phi/F");
-	newtree->Branch("Sub_Jet_PT", &sub_jet_pT, "Sub_Jet_PT/F");
-	newtree->Branch("Sub_Jet_Eta", &sub_jet_eta, "Sub_Jet_Eta/F");
-	newtree->Branch("Sub_Jet_Phi", &sub_jet_phi, "Sub_Jet_Phi/F");
+	newtree->Branch("Jets_PT_Lead", &leading_jet_pT, "Jets_PT_Lead/F");
+	newtree->Branch("Jets_Eta_Lead", &leading_jet_eta, "Jets_Eta_Lead/F");
+	newtree->Branch("Jets_Phi_Lead", &leading_jet_phi, "Jets_Phi_Lead/F");
+	newtree->Branch("Jets_PT_Sub", &sub_jet_pT, "Jets_PT_Sub/F");
+	newtree->Branch("Jets_Eta_Sub", &sub_jet_eta, "Jets_Eta_Sub/F");
+	newtree->Branch("Jets_Phi_Sub", &sub_jet_phi, "Jets_Phi_Sub/F");
 	
 	for(Long64_t i=0; i < nentries; i++) {
 		oldtree->GetEntry(i);

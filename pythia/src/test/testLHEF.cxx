@@ -24,17 +24,21 @@ int main(int argc, char** argv)
 	pythia = new Pythia();
 
 	LHAupLHEF *lhef = NULL;
+	cout  << "HERE1 " <<   endl;
 	lhef = new LHAupLHEF(&pythia->info, lhegz.c_str(), NULL, false, true);
+	cout  << "HERE2 " <<   endl;
 
 	if (!lhef->setInit()) {
 		pythia->info.errorMsg("Error from LHAupMadgraph::reader: failed to "
 				"initialize the LHEF reader");
 		return 1;
 	}
+	cout  << "HERE3 " <<   endl;
 	if (lhef->sizeProc() != 1) {
 		pythia->info.errorMsg("Error from LHAupMadgraph::reader: number of "
 				"processes is not 1"); return 1;
 	}
+	cout  << "HERE4 " <<   endl;
 
 	delete lhef;
 	delete pythia;

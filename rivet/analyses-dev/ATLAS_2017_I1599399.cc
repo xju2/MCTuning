@@ -4,11 +4,6 @@
 #include "Rivet/Projections/IdentifiedFinalState.hh"
 #include "Rivet/Projections/VisibleFinalState.hh"
 #include "Rivet/Projections/FastJets.hh"
-#include "Rivet/Projections/DressedLeptons.hh"
-#include "Rivet/Projections/MissingMomentum.hh"
-#include "Rivet/Projections/SmearedParticles.hh"
-#include "Rivet/Projections/SmearedJets.hh"
-#include "Rivet/Projections/SmearedMET.hh"
 #include "Rivet/Tools/Logging.hh"
 
 #include "HepMC/WeightContainer.h"
@@ -16,6 +11,7 @@
 #include <stdio.h>
 #include <algorithm>
 #include <utility>
+#include <ctime>
 
 // From ROOT
 #include <TFile.h>
@@ -75,7 +71,7 @@ public:
 		// Jets
 		FinalState fs(Cuts::abseta < 4.5);
 		FastJets jets(fs, FastJets::ANTIKT, 0.4);
-		declare(eets, "JetsTruth");
+		declare(jets, "JetsTruth");
 
 		// photons
 		IdentifiedFinalState photons(Cuts::abseta < maxEtaPhoton && Cuts::pT > minPtPhoton);
@@ -90,7 +86,10 @@ public:
 
 
 		// Smearing
-		int seed = (int)rand01()*300; //[TODO]
+		// int seed = (int)rand01()*300; //[TODO]
+		int seed = (int) gRandom->Rndm()*1000 + 500;
+		//MSG_INFO("Seed: " << seed);
+		//cout <<" seed: " << seed << endl;
 		muonSmear2 = new MuonSmearGiacomo(seed%3, true);
 		mu_sys_names = muonSmear2->GetMuonSysNames();
 		egammaSmear = new EgammaSmear();
@@ -118,7 +117,8 @@ public:
 		//Prepare for Ntuple
 		ntheoweights = 4;
 		char buffer[512];
-		sprintf(buffer, "HmumuNtuple_%d.root", seed);
+		std::time_t now = std::time(nullptr);
+		sprintf(buffer, "HmumuNtuple_%d.root", (int)now);
 		string filename(buffer);
 		bool doTruth = true;
 		bool doReco = true;
@@ -140,7 +140,9 @@ public:
 		ntuple->Print();
 
 		n_evt_3muons = 0;
-
+		nEvents = 0;
+		sumWgt = 0;
+		sumWgt2 = 0;
 	}
 
 	// if jet passed pT selection
@@ -178,58 +180,62 @@ public:
 		sumWgt2 += weight*weight;
 		TLorentzVector tlv_zero(0., 0., 0., 0.);
 
+		// MSG_INFO("weight..." << weight);
+		
+
 		// Truth studies
 		// 
 		// Truth muons
 		const Particles muTruth  = apply<IdentifiedFinalState>(event, "bareMuons").particlesByPt();
 
-		int l1_idx_gen = -1, l2_idx_gen = -1;
-		bool found = false;
-
-		if(muTruth.size() == 2
-		   && muTruth.at(0).pid() * muTruth.at(1).pid() < 0) {
-			l1_idx_gen = 0; l2_idx_gen = 1;
-			found = true;
-		} else if (muTruth.size() > 2) {
-			n_evt_3muons ++ ;
-			for(int i=0; i < (int) muTruth.size(); i++) {
-				int pid1 = muTruth.at(i).pid();
-				for(int j=i+1; j < (int) muTruth.size(); j++) {
-					int pid2 = muTruth.at(j).pid();
-					if(pid1*pid2 < 0) {
-						l1_idx_gen = i;
-						l2_idx_gen = j;
-						found = true;
-						break;
-					}
-				}
-				if(found) break;
+		// Truth Jets
+		// remove jets with low track multiplicity and close to muons (DR < 0.4)
+		Cut jet_cuts = Cuts::pT > 20*GeV && Cuts::abseta < 4.5;
+		const Jets truth_jets = apply<JetAlg>(event, "JetsTruth").jetsByPt(jet_cuts);
+		const Jets isojets = filter_discard(truth_jets, [&](const Jet& j) {
+				if(j.particles(Cuts::abscharge > 0 && Cuts::pT > 0.4*GeV).size() <= 3
+					&& (any(muTruth, deltaRLess(j, 0.4)))) return true;
+				return false;
+				});
+		// remove muons that are close to surviving jets (DR < 0.4)
+		const Particles iso_muons = filter_discard(muTruth, [&](const Particle& m) {
+			for(const Jet& j: isojets) {
+				if(deltaR(j, m) > 0.4) continue;
+				if(j.particles(Cuts::abscharge > 0 && Cuts::pT > 0.4*GeV).size() > 3) return true;
 			}
-		} else {
+			return false;
+			});
+
+		if(iso_muons.size() != 2
+			|| iso_muons.at(0).pid() * iso_muons.at(1).pid() > 0) {
 			return;
 		}
 
-		if(!found) return;
 
-		TLorentzVector vecl1_rad = to_tlv(muTruth[l1_idx_gen].momentum());
-		TLorentzVector vecl2_rad = to_tlv(muTruth[l2_idx_gen].momentum());
-		int idl1 = muTruth[l1_idx_gen].pid();
+		int l1_idx_gen = 0, l2_idx_gen = 1;
+
+		TLorentzVector vecl1_rad = to_tlv(iso_muons[l1_idx_gen].momentum());
+		TLorentzVector vecl2_rad = to_tlv(iso_muons[l2_idx_gen].momentum());
+		int idl1 = iso_muons[l1_idx_gen].pid();
 
 		// Truth Photons
 		const Particles phTruth = apply<IdentifiedFinalState>(event, "photonTruth").particlesByPt();
+		const Particles iso_photons = filter_discard(phTruth, [&](const Particle& p) {
+			return p.fromDecay();
+			});
+
+
 		TLorentzVector leading_photon_gen;
-		if(phTruth.size() > 0) {
-			leading_photon_gen = to_tlv(phTruth[0].momentum());
+		if(iso_photons.size() > 0) {
+			leading_photon_gen = to_tlv(iso_photons[0].momentum());
 		} else {
 			leading_photon_gen = tlv_zero;
 		}
 
-		// Truth Jets
-		Cut jet_cuts = Cuts::pT > 20*GeV && Cuts::abseta < 4.5;
-		const Jets truth_jets = apply<JetAlg>(event, "JetsTruth").jetsByPt(jet_cuts);
+
 		vector<TLorentzVector> jets_gen;
 		vector<TLorentzVector> jets_gen_subthreshold;
-		for(auto& jet: truth_jets) {
+		for(auto& jet: isojets) {
 			FourMomentum momentum = jet.momentum();
 			TLorentzVector jet_tlv = to_tlv(momentum);
 
@@ -274,13 +280,13 @@ public:
 		}
 
 		vector<TLorentzVector> photons_gen;
-		for(auto& photon: phTruth) {
+		for(auto& photon: iso_photons) {
 			TLorentzVector ph_tlv = to_tlv(photon.momentum());
 			photons_gen.push_back(ph_tlv);
 			hr_gen += ph_tlv;
 			sumet_gen += photon.pt();
 		}
-		for(auto& muon: muTruth) {
+		for(auto& muon: iso_muons) {
 			FourMomentum momentum = muon.momentum();
 			hr_gen += to_tlv(muon.momentum());
 		}
@@ -304,7 +310,7 @@ public:
 		vector<float> ptreso_vec;
 		vector<vector<double> > mu_sys_ptfacts;
 		int idx = 0;
-		for(auto muon: muTruth){
+		for(auto muon: iso_muons){
 			TLorentzVector smeared_muon = muonSmear2->GetSmearedMuon(to_tlv(muon.momentum()));
 			smeared_muons.push_back(make_pair(smeared_muon, idx));
 
@@ -320,33 +326,7 @@ public:
 			);
 
 		//Find index of the leading two oppositely-charged muons
-		found = false;
-		int l1_idx = -1, l2_idx = -1;
-		if(smeared_muons.size() == 2) {
-			l1_idx = 0;
-			l2_idx = 1;
-			found = true;
-		} else {
-			for(int i = 0; i < (int) smeared_muons.size(); i++){
-				int idx1 = smeared_muons.at(i).second;
-				int pid1 = muons_pid.at(idx1);
-				for(int j = i+1; j < (int) smeared_muons.size(); j++) {
-					int idx2 = smeared_muons.at(j).second;
-					int pid2 = muons_pid.at(idx2);
-					if(pid1 * pid2 < 0) {
-						l1_idx = i;
-						l2_idx = j;
-						found = true;
-						break;
-					}
-				}
-				if(found) break;
-			}
-		}
-
-		if(l1_idx < 0 || l2_idx < 0) 
-			return ;
-
+		int l1_idx = 0, l2_idx = 1;
 
 		vecl1_det = smeared_muons.at(l1_idx).first;
 		vecl2_det = smeared_muons.at(l2_idx).first;
@@ -363,7 +343,7 @@ public:
 		// only smeare the jets that pass losse truth cuts: pT > 20 GeV.
 		vector<TLorentzVector> jets_det;
 		vector<TLorentzVector> jets_det_subthreshold;
-		for(auto jet: truth_jets)
+		for(auto jet: isojets)
 		{
 			if(jet.pt()/GeV < minGenJetPt || jet.abseta() > maxGenJetRapidity) 
 				continue;
@@ -460,12 +440,40 @@ public:
 			hr_det += jet;
 			sumet_det += jet.Pt();
 		}
+		for(auto& ph : photons_det) {
+			hr_det += ph;
+		}
 		TLorentzVector dilep = vecl1_det + vecl2_det;
 		double ptll = dilep.Pt();
 		if(smearMET) {
 			// smearing was done for 0, 1, and 2jets events.
-			// how about now??
+			int cat = 0;
+			if (jets_det.size() == 1)
+				cat = 1;
+			else if (jets_det.size() >= 2)
+				cat = 2;
+			int bin = h_metSmear[cat*3]->FindBin(ptll);
+			double bias_par = h_metSmear[cat*3+0]->GetBinContent(bin);
+			double resol_par = h_metSmear[cat*3+1]->GetBinContent(bin);
+			double resol_perp = h_metSmear[cat*3+2]->GetBinContent(bin);
+
+			upar_det  = (hr_det.Px()*dilep.Px() + hr_det.Py()*dilep.Py())/ptll;
+			uperp_det = (hr_det.Py()*dilep.Px() - hr_det.Px()*dilep.Py())/ptll;
+
+			double smeared_HR_par  = gRandom->Gaus(upar_det+bias_par, resol_par);
+			double smeared_HR_perp = gRandom->Gaus(uperp_det, resol_perp);
+
+			double cosphi = cos(dilep.Phi());
+			double sinphi = sin(dilep.Phi());
+			double smeared_HR_Px = smeared_HR_par*cosphi-smeared_HR_perp*sinphi;
+			double smeared_HR_Py = smeared_HR_par*sinphi+smeared_HR_perp*cosphi;
+			double smeared_HR_E = sqrt(smeared_HR_par*smeared_HR_par
+					+smeared_HR_perp*smeared_HR_perp);
+			hr_det.SetPxPyPzE(smeared_HR_Px, smeared_HR_Py, 0., smeared_HR_E);
 		}
+		upar_det  = (hr_det.Px()*dilep.Px() + hr_det.Py()*dilep.Py())/ptll;
+		uperp_det = (hr_det.Py()*dilep.Px() - hr_det.Px()*dilep.Py())/ptll;
+
 		met_det = -( hr_det + dilep );
 
 		MSG_DEBUG("RecoLevel...");

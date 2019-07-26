@@ -14,6 +14,8 @@
 #include "Pythia8/Pythia.h"
 #include "Pythia8Plugins/HepMC2.h"
 #include <unistd.h>
+#include <iostream>
+using namespace std;
 
 using namespace Pythia8;
 
@@ -94,9 +96,11 @@ int main( int argc, char* argv[] ){
     stringstream in;
     in   << "_" << njetcounterLO << ".lhe";
 #ifdef GZIPSUPPORT
+	cout << "with GZIP" << endl;
     if(access( (iPathTree+in.str()+".gz").c_str(), F_OK) != -1) in << ".gz";
 #endif
     string LHEfile = iPathTree + in.str();
+	cout << "INPUT: " << LHEfile << endl;
     pythia.settings.mode("Merging:nRequested", njetcounterLO);
     pythia.settings.mode("Beams:frameType", 4);
     pythia.settings.word("Beams:LHEF", LHEfile);
