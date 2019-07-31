@@ -4,7 +4,7 @@
 #include <vector>
 
 using namespace std;
-int flatten(const char* in_file_name, const char* out_file_name)
+int flatten(const char* in_file_name, const char* out_file_name, bool reweight=false)
 {
 	TFile* in_file = TFile::Open(in_file_name, "READ");
 	const char* tree_name = "DiMuonNtuple";
@@ -42,9 +42,13 @@ int flatten(const char* in_file_name, const char* out_file_name)
 	vector<float>* jets_pt = new vector<float>();
 	vector<float>* jets_eta = new vector<float>();
 	vector<float>* jets_phi = new vector<float>();
+	double mcweight;
+	double expweight;
 	oldtree->SetBranchAddress("Jets_PT", &jets_pt);
 	oldtree->SetBranchAddress("Jets_Eta", &jets_eta);
 	oldtree->SetBranchAddress("Jets_Phi", &jets_phi);
+	oldtree->SetBranchAddress("McEventWeight", &mcweight);
+	oldtree->SetBranchAddress("ExpWeight", &expweight);
 
 	TFile* out_file = TFile::Open(out_file_name, "RECREATE");
 	TTree* newtree = oldtree->CloneTree(0);
@@ -53,13 +57,16 @@ int flatten(const char* in_file_name, const char* out_file_name)
 	if (lumi){
 		lumi->Write();
 	}
+	double luminosity = lumi->GetBinContent(1);
 
+	double weight;
 	newtree->Branch("Jets_PT_Lead", &leading_jet_pT, "Jets_PT_Lead/F");
 	newtree->Branch("Jets_Eta_Lead", &leading_jet_eta, "Jets_Eta_Lead/F");
 	newtree->Branch("Jets_Phi_Lead", &leading_jet_phi, "Jets_Phi_Lead/F");
 	newtree->Branch("Jets_PT_Sub", &sub_jet_pT, "Jets_PT_Sub/F");
 	newtree->Branch("Jets_Eta_Sub", &sub_jet_eta, "Jets_Eta_Sub/F");
 	newtree->Branch("Jets_Phi_Sub", &sub_jet_phi, "Jets_Phi_Sub/F");
+	newtree->Branch("weight", &weight, "weight/F");
 	
 	for(Long64_t i=0; i < nentries; i++) {
 		oldtree->GetEntry(i);
@@ -81,6 +88,12 @@ int flatten(const char* in_file_name, const char* out_file_name)
 			sub_jet_eta = 0;
 			sub_jet_phi = 0;
 		}
+		if(reweight) {
+			weight = mcweight * expweight;
+		} else {
+			weight = mcweight;
+		}
+		weight /= luminosity;
 		newtree->Fill();
 	}
 
