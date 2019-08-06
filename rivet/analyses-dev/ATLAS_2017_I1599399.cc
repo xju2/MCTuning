@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <utility>
 #include <ctime>
+#include <functional>
 
 // From ROOT
 #include <TFile.h>
@@ -174,6 +175,7 @@ public:
 	{
 		MSG_DEBUG("Entering...");
 		const double weight = event.weight();
+		double det_weight = 1.0;
 
 		nEvents ++;
 		sumWgt += weight;
@@ -306,12 +308,16 @@ public:
 		// Smearing Objects,
 		// use bare muons,
 		vector<pair<TLorentzVector, int> > smeared_muons;
+		vector<std::reference_wrapper<TLorentzVector> >  origin_muons;
 		vector<int> muons_pid;
 		vector<float> ptreso_vec;
 		vector<vector<double> > mu_sys_ptfacts;
 		int idx = 0;
 		for(auto muon: iso_muons){
-			TLorentzVector smeared_muon = muonSmear2->GetSmearedMuon(to_tlv(muon.momentum()));
+			TLorentzVector muon_tlv = to_tlv(muon.momentum());
+			origin_muons.push_back(muon_tlv);
+
+			TLorentzVector smeared_muon = muonSmear2->GetSmearedMuon(muon_tlv);
 			smeared_muons.push_back(make_pair(smeared_muon, idx));
 
 			muons_pid.push_back(muon.pid());
@@ -319,6 +325,8 @@ public:
 			mu_sys_ptfacts.push_back(muonSmear2->GetMuonSysPtfacts());
 			idx ++;
 		}
+		double muon_eff = muonSmear2->GetDiMuonEff(origin_muons.at(0), origin_muons.at(1));
+		det_weight *= muon_eff;
 
 		// sort semared muons
 		sort(smeared_muons.begin(), smeared_muons.end(),
@@ -482,7 +490,7 @@ public:
 		// 2. leading muons with pT > 27 GeV
 		// 3.  no b-tagged jets 
 		// https://gitlab.cern.ch/lbnl/powheginlinegen/blob/master/apps/hmumu.cxx
-		ntuple->SetRecoLevel(weight,
+		ntuple->SetRecoLevel(det_weight,
 				(idl1>0)?vecl1_det:vecl2_det,
 				(idl1>0)?vecl2_det:vecl1_det,
 				leading_photon_det, // This is FSR photon!!!
