@@ -52,6 +52,7 @@ public:
 
     /// Book histograms and initialise projections before the run
 	void init() {
+		gRandom->SetSeed();
 		// this->getLog().setLevel(Log::INFO);
 		// int print_level = Log::DEBUG;
 		// int print_level = Log::INFO;
@@ -88,9 +89,10 @@ public:
 
 		// Smearing
 		// int seed = (int)rand01()*300; //[TODO]
-		int seed = (int) gRandom->Rndm()*1000 + 500;
+		// int seed = (int) gRandom->Rndm()*1000 + 500;
 		//MSG_INFO("Seed: " << seed);
 		//cout <<" seed: " << seed << endl;
+		int seed = 1;
 		muonSmear2 = new MuonSmearGiacomo(seed%3, true);
 		mu_sys_names = muonSmear2->GetMuonSysNames();
 		egammaSmear = new EgammaSmear();
@@ -119,7 +121,8 @@ public:
 		ntheoweights = 4;
 		char buffer[512];
 		std::time_t now = std::time(nullptr);
-		sprintf(buffer, "HmumuNtuple_%d.root", (int)now);
+		int file_seed = (int) now + (int)gRandom->Rndm()*10; 
+		sprintf(buffer, "HmumuNtuple_%d.root", file_seed);
 		string filename(buffer);
 		bool doTruth = true;
 		bool doReco = true;
@@ -138,7 +141,7 @@ public:
 		ntuple->SetMaxPhotonEta(maxEtaPhoton);
 		ntuple->SetMinPhotonPt(minPtPhoton);
 		ntuple->SetMassPrescale(lowMllBoundary, lowMllPrescale);
-		ntuple->Print();
+		// ntuple->Print();
 
 		n_evt_3muons = 0;
 		nEvents = 0;
@@ -307,45 +310,20 @@ public:
 
 		// Smearing Objects,
 		// use bare muons,
-		vector<pair<TLorentzVector, int> > smeared_muons;
-		vector<std::reference_wrapper<TLorentzVector> >  origin_muons;
-		vector<int> muons_pid;
-		vector<float> ptreso_vec;
-		vector<vector<double> > mu_sys_ptfacts;
-		int idx = 0;
-		for(auto muon: iso_muons){
-			TLorentzVector muon_tlv = to_tlv(muon.momentum());
-			origin_muons.push_back(muon_tlv);
+		vecl1_det = muonSmear2->GetSmearedMuon(vecl1_rad);
+		l1_ptreso = muonSmear2->GetLastPtReso();
+		mu1_sys_ptfacts = muonSmear2->GetMuonSysPtfacts();
 
-			TLorentzVector smeared_muon = muonSmear2->GetSmearedMuon(muon_tlv);
-			smeared_muons.push_back(make_pair(smeared_muon, idx));
+		vecl2_det = muonSmear2->GetSmearedMuon(vecl2_rad);
+		l2_ptreso = muonSmear2->GetLastPtReso();
+		mu2_sys_ptfacts = muonSmear2->GetMuonSysPtfacts();
 
-			muons_pid.push_back(muon.pid());
-			ptreso_vec.push_back(muonSmear2->GetLastPtReso());
-			mu_sys_ptfacts.push_back(muonSmear2->GetMuonSysPtfacts());
-			idx ++;
+		double muon_eff = muonSmear2->GetDiMuonEff(vecl1_rad, vecl2_rad);
+		if(abs(muon_eff) < 1e-5) {
+			MSG_INFO("Leading pT: " << vecl1_rad.Pt() << " " << vecl1_rad.Eta() << " ");
+			MSG_INFO("SubLeading pT: " << vecl2_rad.Pt() << " " << vecl2_rad.Eta() << " ");
 		}
-		double muon_eff = muonSmear2->GetDiMuonEff(origin_muons.at(0), origin_muons.at(1));
 		det_weight *= muon_eff;
-
-		// sort semared muons
-		sort(smeared_muons.begin(), smeared_muons.end(),
-				[](pair<TLorentzVector, int>& a, pair<TLorentzVector, int>& b){ return a.first.Pt() > b.first.Pt(); }
-			);
-
-		//Find index of the leading two oppositely-charged muons
-		int l1_idx = 0, l2_idx = 1;
-
-		vecl1_det = smeared_muons.at(l1_idx).first;
-		vecl2_det = smeared_muons.at(l2_idx).first;
-		int idx1  = smeared_muons.at(l1_idx).second;
-		int idx2  = smeared_muons.at(l2_idx).second;
-
-		l1_ptreso = ptreso_vec.at(idx1);
-		l2_ptreso = ptreso_vec.at(idx2);
-		mu1_sys_ptfacts = mu_sys_ptfacts.at(idx1);
-		mu2_sys_ptfacts = mu_sys_ptfacts.at(idx2);
-
 
 		// Jets smeared differently for gluon-jet and quark-jet
 		// only smeare the jets that pass losse truth cuts: pT > 20 GeV.

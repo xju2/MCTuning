@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""A script to compare Hmumu Ntuples
+"""A script to compare Hmumu Ntuples with MT
 """
 from __future__ import print_function
 from __future__ import division
@@ -13,16 +13,13 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 import itertools
-
 import time
 from tqdm import tqdm
-
 import multiprocessing as mp
 from functools import partial
 
-tree_name = "DiMuonNtuple"
-
 import yaml
+import threading
 
 def pairwise(iterable):
   """s -> (s0,s1), (s1,s2), (s2, s3), ..."""
@@ -48,12 +45,14 @@ branches = [
     "Jets_Eta_Lead", "Jets_Phi_Lead", "Jets_PT_Lead",
     "Jets_Eta_Sub", "Jets_Phi_Sub", "Jets_PT_Sub",
     "Event_MET",
+    "Jets_jetMultip",
     #"Event_MET_Phi", ##wrong naming
 ]
 
 def process_file(file_name, selections):
 
     rfile = ROOT.TFile.Open(file_name)
+    tree_name = "DiMuonNtuple"
     tree = rfile.Get(tree_name)
 
     nentries = tree.GetEntries()
@@ -132,14 +131,16 @@ def plot(hists, weights, luminosities,
 
 def get_hist_opt(hist_name):
     bins, label, islog = None, None, None
+
+    yy = "Arb. Unit"
     if "PT" in hist_name:
         islog = False
         if "Jet" in hist_name:
             bins = np.linspace(20, 320, 100)
-            label = "Events / 3 GeV"
+            label = yy+" / 3 GeV"
         else:
             bins = np.linspace(10, 110, 51)
-            label = "Events / 2 GeV"
+            label = yy+" / 2 GeV"
 
     if "Eta" in hist_name:
         islog = False
@@ -147,17 +148,17 @@ def get_hist_opt(hist_name):
             bins = np.linspace(-5, 5, 51)
         else:
             bins = np.linspace(-3, 3, 31)
-        label = "Events / 0.2"
+        label = yy+" / 0.2"
 
     if "Phi" in hist_name:
         islog = False
         bins = np.linspace(-3.2, 3.2, 65)
-        label = "Events / 0.1"
+        label = yy+" / 0.1"
 
     if "Charge" in hist_name:
         islog = False
         bins = np.linspace(-1.5, 1.5, 3)
-        label = "Events"
+        label = yy
 
     if "Minv" in hist_name:
         islog = False
@@ -165,12 +166,17 @@ def get_hist_opt(hist_name):
             bins = np.linspace(0, 80, 41)
         else:
             bins = np.linspace(55, 165, 56)
-        label = "Events / 2 GeV"
+        label = yy+" / 2 GeV"
 
     if "MET" in hist_name:
         islog = False
         bins = np.linspace(0, 150, 30)
-        label = "Events / 5 GeV"
+        label = yy+" / 5 GeV"
+
+    if "jetMultip" in hist_name:
+        islog = False
+        bins = np.linspace(-0.5, 6.5, 8)
+        label = yy
 
     return (bins, label, islog)
 
@@ -204,6 +210,7 @@ if __name__ == "__main__":
     add_arg('config_name', type=str, help='config file')
     add_arg('sel', type=str, help='event selection')
     add_arg('outname', type=str, help='output name')
+    add_arg('-w', '--workers', type=int, help='number of workers', default=1)
 
     args = parser.parse_args()
 
@@ -235,8 +242,43 @@ if __name__ == "__main__":
     ## get branch names
     n_obs = len(branches)
     print("total {} observables".format(n_obs))
-    for branch_name in tqdm(branches):
-        make_plots(branch_name, histograms, tag_names)
+
+    ## use multiple threads for ploting
+    ijob = 0
+    max_threads = args.workers
+    while ijob < n_obs:
+        if threading.active_count() < max_threads:
+            branch_name = branches[ijob]
+            if branch_name == "weight":
+                ijob += 1
+                continue
+
+            hists = [histograms[x][branch_name].tolist() for x in range(len(tag_names))]
+            weights = [histograms[x]["weight"].tolist() for x in range(len(tag_names))]
+            outname = os.path.join(out_dir, "{}.pdf".format(branch_name))
+            bins, ylabel, islog = get_hist_opt(branch_name)
+            plot_options = {
+                'bins': bins,
+                'histtype': 'step',
+                'lw': 2,
+                'log': islog,
+                'density': True
+            }
+            xlabel = branch_name
+            ylabel = ylabel
+
+            x = threading.Thread(target=plot,
+                                 args=(
+                                     hits, weights, luminosities,
+                                     xlabel, ylabel, tag_names, outname,
+                                     plot_options)
+                                )
+            x.start()
+            ijob += 1
+        else:
+            time.sleep(30)
+    #for branch_name in tqdm(branches):
+    #    make_plots(branch_name, histograms, tag_names)
 
     #n_workers = 20
     #pool = mp.Pool(processes=n_workers)

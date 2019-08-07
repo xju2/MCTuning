@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
 		HepMC::GenEvent* hepmcevt = new HepMC::GenEvent();
 		double evtweight = pythia.info.weight();
 		double weight = pythia.info.mergingWeight();
-		if(iEvent < 20) {
+		if(iEvent < 5) {
 			cout <<  " event weight: " << evtweight <<" merging weight: " << weight << endl;
 		}
 		//weight *= evtweight;
