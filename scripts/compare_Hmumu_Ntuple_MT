@@ -253,7 +253,7 @@ if __name__ == "__main__":
                 ijob += 1
                 continue
 
-            hists = [histograms[x][branch_name].tolist() for x in range(len(tag_names))]
+            hits = [histograms[x][branch_name].tolist() for x in range(len(tag_names))]
             weights = [histograms[x]["weight"].tolist() for x in range(len(tag_names))]
             outname = os.path.join(out_dir, "{}.pdf".format(branch_name))
             bins, ylabel, islog = get_hist_opt(branch_name)
