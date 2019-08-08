@@ -319,10 +319,10 @@ public:
 		mu2_sys_ptfacts = muonSmear2->GetMuonSysPtfacts();
 
 		double muon_eff = muonSmear2->GetDiMuonEff(vecl1_rad, vecl2_rad);
-		if(abs(muon_eff) < 1e-5) {
-			MSG_INFO("Leading pT: " << vecl1_rad.Pt() << " " << vecl1_rad.Eta() << " ");
-			MSG_INFO("SubLeading pT: " << vecl2_rad.Pt() << " " << vecl2_rad.Eta() << " ");
-		}
+		// if(abs(muon_eff) < 1e-5) {
+		// 	MSG_INFO("Leading pT: " << vecl1_rad.Pt() << " " << vecl1_rad.Eta() << " ");
+		// 	MSG_INFO("SubLeading pT: " << vecl2_rad.Pt() << " " << vecl2_rad.Eta() << " ");
+		// }
 		det_weight *= muon_eff;
 
 		// Jets smeared differently for gluon-jet and quark-jet
