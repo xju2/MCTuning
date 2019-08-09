@@ -12,22 +12,20 @@ using namespace std;
 int main(int argc, char** argv) {
 
   // Check that correct number of command-line arguments
-  if (argc < 3) {
-    cerr << " Unexpected number of command-line arguments. \n You are"
-         << " expected to provide one input and one output file name. \n"
-         << " Program stopped! " << endl;
+  if (argc < 4) {
+    cerr << " pythia_shower_ckkwL_merging pythia.cmd in.lhe.gz out.hepmc\n" << endl;
     return 1;
   }
 
   // Confirm that external files will be used for input and output.
   cout << "\n >>> PYTHIA settings will be read from file " << argv[1]
        << " <<< \n >>> HepMC events will be written to file "
-       << argv[2] << " <<< \n" << endl;
+       << argv[3] << " <<< \n" << endl;
 
 
 	// Set up pythia to hepmc object
 	HepMC::Pythia8ToHepMC ToHepMC;
-	HepMC::IO_GenEvent ascii_io(argv[2], std::ios::out);
+	HepMC::IO_GenEvent ascii_io(argv[3], std::ios::out);
 
 	// Switch off warnings for parton-level events.
 	ToHepMC.set_free_parton_exception(false);
@@ -37,7 +35,7 @@ int main(int argc, char** argv) {
 	// Initialize Les Houches Event File run. List initialization information.
 	pythia.readFile(argv[1]);
 	// pythia.readString("Beams:frameType = 4");
-	// pythia.readString("Beams:LHEF = "+string(argv[1]));
+	pythia.readString("Beams:LHEF = "+string(argv[2]));
 
 
 	Event& event = pythia.event;
