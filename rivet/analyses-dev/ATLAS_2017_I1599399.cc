@@ -13,6 +13,7 @@
 #include <utility>
 #include <ctime>
 #include <functional>
+#include <unistd.h> // For getpid()
 
 // From ROOT
 #include <TFile.h>
@@ -24,8 +25,9 @@
 #include "NtupleDumper.h"
 
 #include "EgammaSmear.h"
-#include "MuonSmearGiacomo.h"
+#include "MuonSmearGiacomoPU.h"
 #include "JetSmear.h"
+#include "MyJet.h"
 
 namespace Rivet {
 
@@ -56,7 +58,6 @@ public:
 		// this->getLog().setLevel(Log::INFO);
 		// int print_level = Log::DEBUG;
 		// int print_level = Log::INFO;
-		int print_level = Log::INFO;
 
 		// this->getLog().setLevel(Log::DEBUG);
 
@@ -88,12 +89,7 @@ public:
 
 
 		// Smearing
-		// int seed = (int)rand01()*300; //[TODO]
-		// int seed = (int) gRandom->Rndm()*1000 + 500;
-		//MSG_INFO("Seed: " << seed);
-		//cout <<" seed: " << seed << endl;
-		int seed = 1;
-		muonSmear2 = new MuonSmearGiacomo(seed%3, true);
+		muonSmear2 = new MuonSmearGiacomoPU(true);
 		mu_sys_names = muonSmear2->GetMuonSysNames();
 		egammaSmear = new EgammaSmear();
 		jetSmear = new JetSmear();
@@ -102,8 +98,7 @@ public:
 		}
 		if(smearMET) {
 			char buffer[512];
-			int n_char; 
-			n_char = sprintf(buffer, "%s/smear_metparam.root", getenv("ATLAS_SMEAR_FILES_DIR"));
+			sprintf(buffer, "%s/smear_metparam_v16.root", getenv("ATLAS_SMEAR_FILES_DIR"));
 			TFile* f = TFile::Open((const char*)buffer);
 			const std::vector<std::string> cats{"0jet", "1jet", "2jet"};
 			int i = 0;
@@ -120,8 +115,9 @@ public:
 		//Prepare for Ntuple
 		ntheoweights = 4;
 		char buffer[512];
-		std::time_t now = std::time(nullptr);
-		int file_seed = (int) now + (int)gRandom->Rndm()*10; 
+		// std::time_t now = std::time(nullptr);
+		// int file_seed = (int) now + (int)gRandom->Rndm()*10; 
+		int file_seed = getpid();
 		sprintf(buffer, "HmumuNtuple_%d.root", file_seed);
 		string filename(buffer);
 		bool doTruth = true;
@@ -172,21 +168,30 @@ public:
 		return inParticle;
 	}
 
+	int RunNumberToMCPeriod(unsigned int random) {
+		int period = -1;
+		if (random < 320000) {
+			period = 0;
+		} else if (random < 342000) {
+			period = 1;
+		} else {
+			period = 2;
+		}
+		return period;
+	}
+
 
 	/// Perform the per-event analysis
 	void analyze(const Event& event) 
 	{
 		MSG_DEBUG("Entering...");
 		const double weight = event.weight();
-		double det_weight = 1.0;
+		float det_weight = 1.0;
 
 		nEvents ++;
 		sumWgt += weight;
 		sumWgt2 += weight*weight;
 		TLorentzVector tlv_zero(0., 0., 0., 0.);
-
-		// MSG_INFO("weight..." << weight);
-		
 
 		// Truth studies
 		// 
@@ -237,38 +242,20 @@ public:
 			leading_photon_gen = tlv_zero;
 		}
 
-
-		vector<TLorentzVector> jets_gen;
+		// MyJet saves the pid for the jet
+		// which is used in JetSmearing
+		vector<MyJet> jets_gen;
 		vector<TLorentzVector> jets_gen_subthreshold;
 		for(auto& jet: isojets) {
 			FourMomentum momentum = jet.momentum();
 			TLorentzVector jet_tlv = to_tlv(momentum);
 
-//		if(isSubThresholdDetJet(jet_tlv)){
-//			jets_gen_subthreshold.push_back(jet_tlv);
-//		} else {
-//			jets_gen.push_back(jet_tlv);
-//		}
-
 			if(momentum.pt()/GeV < minGenJetPt
 					|| momentum.abseta() > maxGenJetRapidity){
 				jets_gen_subthreshold.push_back(to_tlv(momentum));
 			} else {
-				jets_gen.push_back(to_tlv(momentum));
+				jets_gen.push_back( MyJet(to_tlv(momentum), 21) );
 			}
-		}
-		// Find leading two jets
-		TLorentzVector leading_jet_gen;
-		TLorentzVector subleading_jet_gen;
-		if(jets_gen.size() == 0){
-			leading_jet_gen = tlv_zero;
-		} else {
-			leading_jet_gen = jets_gen.at(0);
-		}
-		if(jets_gen.size() <= 1){
-			subleading_jet_gen = tlv_zero;
-		} else {
-			subleading_jet_gen = jets_gen.at(1);
 		}
 
 		// Reconstruct MET, jets-photons-muons
@@ -302,28 +289,12 @@ public:
 				(idl1>0)?vecl1_rad:vecl2_rad,
 				(idl1>0)?vecl2_rad:vecl1_rad,
 				leading_photon_gen,
-				leading_jet_gen,
-				subleading_jet_gen,
+				jets_gen,
 				vecB.M());
 		// DONE with Truth Studies
-		// 
 
 		// Smearing Objects,
-		// use bare muons,
-		vecl1_det = muonSmear2->GetSmearedMuon(vecl1_rad);
-		l1_ptreso = muonSmear2->GetLastPtReso();
-		mu1_sys_ptfacts = muonSmear2->GetMuonSysPtfacts();
-
-		vecl2_det = muonSmear2->GetSmearedMuon(vecl2_rad);
-		l2_ptreso = muonSmear2->GetLastPtReso();
-		mu2_sys_ptfacts = muonSmear2->GetMuonSysPtfacts();
-
-		double muon_eff = muonSmear2->GetDiMuonEff(vecl1_rad, vecl2_rad);
-		// if(abs(muon_eff) < 1e-5) {
-		// 	MSG_INFO("Leading pT: " << vecl1_rad.Pt() << " " << vecl1_rad.Eta() << " ");
-		// 	MSG_INFO("SubLeading pT: " << vecl2_rad.Pt() << " " << vecl2_rad.Eta() << " ");
-		// }
-		det_weight *= muon_eff;
+		// First Get PileupJets, to determine the MC period
 
 		// Jets smeared differently for gluon-jet and quark-jet
 		// only smeare the jets that pass losse truth cuts: pT > 20 GeV.
@@ -358,7 +329,6 @@ public:
 				jets_det.push_back(sjet);
 			}
 		}
-
 		MSG_DEBUG("Pileup...");
 		// generously smear+suppress the sub-threshold "jets"
 		for (unsigned int i = 0; i < jets_gen_subthreshold.size(); i++) {
@@ -366,10 +336,13 @@ public:
 			TLorentzVector sjet = jets_gen_subthreshold[i]*smearfac;
 			jets_det_subthreshold.push_back(sjet);
 		}
+
 		MSG_DEBUG("Pileup...start");
+		unsigned int randomRunNumber = 320032; // mc16d
+		float pileupWeight = 1.0;
 		if(doPileupJets) {
-			std::vector<TLorentzVector> puj = jetSmear->GetPileupJets(nEvents);
-			MSG_DEBUG("Pileup...start-1");
+			jetSmear->ReadPileupJets(nEvents);
+			std::vector<TLorentzVector> puj = jetSmear->GetPileupJets();
 			for (unsigned int i = 0; i < puj.size(); i++) {
 				puj[i] *= 1e-3; // MeV -> GeV
 				if (isSubThresholdDetJet(puj.at(i)))
@@ -377,13 +350,32 @@ public:
 				else
 					jets_det.push_back(puj.at(i));
 			}
+			randomRunNumber = jetSmear->GetRandomRunNumber();
+			pileupWeight = jetSmear->GetPileupWeight();
 		}
 
 		MSG_DEBUG("Pileup...sort");
-
 		sort(jets_det.begin(), jets_det.end(),
 			[](const TLorentzVector& a, const TLorentzVector& b){ return a.Pt() > b.Pt(); }
 			);
+		int mc_period = RunNumberToMCPeriod(randomRunNumber);
+
+
+		// use bare muons,
+		vecl1_det = muonSmear2->GetSmearedMuon(vecl1_rad, mc_period);
+		l1_ptreso = muonSmear2->GetLastPtReso();
+		mu1_sys_ptfacts = muonSmear2->GetMuonSysPtfacts();
+
+		vecl2_det = muonSmear2->GetSmearedMuon(vecl2_rad, mc_period);
+		l2_ptreso = muonSmear2->GetLastPtReso();
+		mu2_sys_ptfacts = muonSmear2->GetMuonSysPtfacts();
+
+		double muon_eff = muonSmear2->GetDiMuonEff(vecl1_rad, vecl2_rad);
+		// if(abs(muon_eff) < 1e-5) {
+		// 	MSG_INFO("Leading pT: " << vecl1_rad.Pt() << " " << vecl1_rad.Eta() << " ");
+		// 	MSG_INFO("SubLeading pT: " << vecl2_rad.Pt() << " " << vecl2_rad.Eta() << " ");
+		// }
+		det_weight *= muon_eff;
 
 		MSG_DEBUG("Photons...");
 		// Photon smearing
@@ -475,7 +467,9 @@ public:
 				jets_det,
 				met_det, 
 				l1_ptreso, l2_ptreso,
-				mu1_sys_ptfacts, mu2_sys_ptfacts);
+				mu1_sys_ptfacts, mu2_sys_ptfacts,
+				pileupWeight
+				);
 
 		if (vecB.M()/GeV < maxMllNtuple){
 			ntuple->Fill();
@@ -547,7 +541,7 @@ private:
 	double maxMllNtuple;
 
 	int ntheoweights;
-	MuonSmearGiacomo *muonSmear2;
+	MuonSmearGiacomoPU *muonSmear2;
 	EgammaSmear *egammaSmear;
 	JetSmear *jetSmear;
 	TH1 *h_metSmear[3*3];
