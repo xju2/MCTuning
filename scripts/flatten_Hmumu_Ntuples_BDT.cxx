@@ -11,6 +11,9 @@ int flatten(const char* in_file_name, const char* out_file_name, bool reweight=t
 	TFile* in_file = TFile::Open(in_file_name, "READ");
 	const char* tree_name = "DiMuonNtuple";
 	TTree* oldtree = (TTree*) in_file->Get(tree_name);
+	oldtree->SetBranchStatus("ClassOut_XGB_fJVT_Higgs", 0);
+	oldtree->SetBranchStatus("ClassOut_XGB_fJVT_VBF", 0);
+	oldtree->SetBranchStatus("Event_XGB_fJVT_Category", 0);
 
 	Long64_t nentries = oldtree->GetEntries();
 	TH1D* lumi = (TH1D*) in_file->Get("lumi");

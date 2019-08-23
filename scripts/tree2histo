@@ -125,11 +125,14 @@ if __name__ == "__main__":
     outnames = config['outnames']
     tree_name = config['tree_name']
     weight_name = config['weight_name']
-    selection = config['selections'][0]
+    selections = config['selections']
     hist_opts = config['hists']
 
-    ## process each file
-    for file_name, outname in zip(files, outnames):
-        print("Processing: {}".format(file_name))
-        event_info = read_file(file_name, tree_name, branches, selection)
-        make_hists(event_info, hist_opts, outname, weight_name=weight_name)
+    for ise,selection in enumerate(selections):
+        ## process each file
+        for file_name, outname in zip(files, outnames):
+            print("Processing: {}".format(file_name))
+            outname = "sel{}_{}".format(ise,outname)
+            print("Output Name: {}".format(outname))
+            event_info = read_file(file_name, tree_name, branches, selection)
+            make_hists(event_info, hist_opts, outname, weight_name=weight_name)
