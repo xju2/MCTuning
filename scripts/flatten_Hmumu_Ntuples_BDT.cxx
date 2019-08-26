@@ -51,6 +51,8 @@ int flatten(const char* in_file_name, const char* out_file_name, bool reweight=t
 		lumi->Write();
 	}
 	double luminosity = lumi->GetBinContent(1);
+	// default 30 MB, now 300 MB
+	newtree->SetAutoFlush(300000000);
 	
 	// additional variables
 	float weight;
