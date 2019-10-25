@@ -27,46 +27,53 @@ def read_partial_events(
                             stop=stop)
     return event_info
 
+def read_events(chain, branches, selections, start, stop):
+    event_info = tree2array(chain,
+                            branches=branches,
+                            selection=selections,
+                            start=start,
+                            stop=stop)
+    return event_info
+
 def read_file(file_name, tree_name, branches, selections):
     chain = ROOT.TChain(tree_name, tree_name)
     chain.Add(file_name)
     nentries = chain.GetEntries()
-    print("{} contains {} events".format(file_name, nentries))
+    print("{} contains {:,} events".format(file_name, nentries))
 
     if n_workers > 1 and nentries > 2000000:
         # split the jobs
-        # using multiple works does not help
-        # when the number of events < ~2M
+        # using multiple workers does not help
+        # when each worker processes < ~2M events
         even = nentries//n_workers
         event_info_list = []
 
         pool = mp.Pool(processes=n_workers)
         ithread = 0
         threads = []
-        while ithread < n_workers:
+        while ithread < n_workers-1:
             start = even*ithread
             stop = even*(1+ithread)
-            if ithread < n_workers-1:
-                print("start {} and stop {}".format(start, stop))
-                x = pool.apply_async(read_partial_events,
-                                     args=(file_name, tree_name,
-                                           branches, selections,
-                                           start, stop
-                                     ))
-            else:
-                print("start {} and None".format(start))
-                x = pool.apply_async(read_partial_events,
-                                     args=(file_name, tree_name,
-                                           branches, selections,
-                                           start, None
-                                     ))
+            print("start {} and stop {}".format(start, stop))
+            x = pool.apply_async(read_partial_events,
+                                 args=(file_name, tree_name,
+                                       branches, selections,
+                                       start, stop))
             threads.append(x)
             ithread += 1
+        # another thread to do the rest
+        print("start {} to the end".format(start))
+        x = pool.apply_async(read_partial_events,
+                             args=(file_name, tree_name,
+                                   branches, selections,
+                                   start, None))
+        threads.append(x)
+
         event_info = np.concatenate([x.get() for x in threads])
     else:
-        event_info = read_partial_events(file_name, tree_name,
-                                         branches, selections,
-                                         None, None)
+        event_info = read_events(chain,
+                                 branches, selections,
+                                 None, None)
 
     return event_info
 
@@ -133,12 +140,12 @@ if __name__ == "__main__":
     outnames = config['outnames']
     tree_name = config['tree_name']
     weight_name = config['weight_name']
-    selection = config['selections'][0]
+    selections = config['selections']
     hist_opts = config['hists']
 
+    for ise,selection in enumerate(selections):
     ## process each file
-    for file_name, outname in zip(files, outnames):
-        print("Processing: {}".format(file_name))
-        event_info = read_file(file_name, tree_name, branches, selection)
-        make_hists(event_info, hist_opts, outname, weight_name=weight_name)
-        
+        for file_name, outname in zip(files, outnames):
+            print("Processing: {}".format(file_name))
+            event_info = read_file(file_name, tree_name, branches, selection)
+            make_hists(event_info, hist_opts, outname, weight_name=weight_name)
