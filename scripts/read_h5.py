@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+
+if __name__ == "__main__":
+    import h5py
+    import numpy as np
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input', help='input h5 file')
+    parser.add_argument('-n', '--numEvts', help='number of events')
+    args = parser.parse_args()
+
+    file_name = args.input
+    numEvts = args.numEvts
+
+    f = h5py.File(file_name, 'r')
+    tot_evts = f['event']['weight'].shape[0]
+    if tot_evts < numEvts:
+        raise("Not enough events")
+    print("Processing {} events out of the total {} events".format(numEvts, tot_evts))
+
+    tot_trials = np.sum(f['event']['trials'])
+    tot_weight = np.sum(f['event']['weight'])
+    xsection = tot_weight/tot_trials
+    print("Cross section is: {} [pb]".format(xsection))
+
+    for ievt in range(2):
+        start = f['event']['start'][ievt]
+        nparticles = f['event']['nparticles'][ievt]
+        weight = f['event']['weight'][ievt]/tot_trials
+        print("processing {}, weight {}".format(ievt, weight))
+        for ip in range(nparticles):
+            pid = f['particle']['id'][start+ip]
+            px = f['particle']['px'][start+ip]
+            py = f['particle']['py'][start+ip]
+            pz = f['particle']['pz'][start+ip]
+            m = f['particle']['m'][start+ip]
+            print(pid, px, py, pz, m)
