@@ -62,11 +62,11 @@ def read_file(file_name, tree_name, branches, selections):
             threads.append(x)
             ithread += 1
         # another thread to do the rest
-        print("start {} to the end".format(start))
+        print("start {} to the end".format(stop))
         x = pool.apply_async(read_partial_events,
                              args=(file_name, tree_name,
                                    branches, selections,
-                                   start, None))
+                                   stop, None))
         threads.append(x)
 
         event_info = np.concatenate([x.get() for x in threads])
