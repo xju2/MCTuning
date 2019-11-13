@@ -69,12 +69,12 @@ if __name__ == "__main__":
     while itask < n_tot_tasks:
         job_idx = job_ids[itask]
         out_name = '{}/{}'.format(out_dir, "Smear{}.root".format(job_idx))
-        ## test of out name is already there
-        root_file = ROOT.TFile(out_name)
-        if root_file and not root_file.IsZombie():
-            print("{} is there".format(out_name))
-            itask += 1
-            continue
+        if os.path.exists(out_name):
+            root_file = ROOT.TFile(out_name)
+            if root_file and not root_file.IsZombie():
+                print("{} is there".format(out_name))
+                itask += 1
+                continue
 
         cmd =['/global/homes/x/xju/code/powheginlinegen/apps/smearing_on_peak', '-i', file_name, '-o', out_name, '-s', str(job_idx+7*rank)]
         if len(tasks) < n_workers:
