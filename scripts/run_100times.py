@@ -65,7 +65,6 @@ if __name__ == "__main__":
 
     tasks = []
     itask = 0
-    n_jobs = 0
     while itask < n_tot_tasks:
         job_idx = job_ids[itask]
         out_name = '{}/{}'.format(out_dir, "Smear{}.root".format(job_idx))
