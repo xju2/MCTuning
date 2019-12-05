@@ -11,23 +11,41 @@ ROOT.gROOT.SetBatch()
 from root_plot_utils import AtlasStyle
 from root_plot_utils.ploter import Ploter
 
+def change_range(hh):
+    tt = hh.GetName()+"_CP"
+    hh_cp = ROOT.TH1F(tt, tt, 900, 110, 200)
+    hh_cp.SetDirectory(0)
+    s_bin = hh.FindBin(110)
+    e_bin = hh.FindBin(200)
+    for ibin in range(900):
+        hh_cp.SetBinContent(ibin+1, hh.GetBinContent(s_bin+ibin))
+        hh_cp.SetBinError(ibin+1, hh.GetBinError(s_bin+ibin))
+    return hh_cp
+
 if __name__ == "__main__":
     import argparse
     import os
     import yaml
 
-    #parser = argparse.ArgumentParser(description='Compare Histograms')
-    #add_arg = parser.add_argument
-    #add_arg('config_name', type=str, help='config file')
-    #add_arg('outdir', type=str, help='output directory')
-    #add_arg('-n', '--normalize', action='store_true', help='shape comparison')
-    #args = parser.parse_args()
-    #density = args.normalize
+    parser = argparse.ArgumentParser(description='Compare Histograms')
+    add_arg = parser.add_argument
+    add_arg('sherpa', help='Sherpa File')
+    add_arg('other', help='other files')
+    add_arg('--outdir', help='output directory', default='plot')
+    add_arg('--indir', help='output directory', default='inputs')
+    args = parser.parse_args()
 
-    outdir = 'plots'
-    input_dir = 'inputs/'
-    f_sherpa_name = os.path.join(input_dir, 'sherpa_smearedHist.root')
-    fin_name = os.path.join(input_dir, 'hist_20191117_reduce50.root')
+    f_sherpa_name = args.sherpa
+    fin_name = args.other
+    outdir = args.outdir
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    input_dir = args.indir
+    #f_sherpa_name = os.path.join(input_dir, 'sherpa_smearedHist.root')
+    #fin_name = os.path.join(input_dir, 'hist_20191117_reduce50.root')
+    f_sherpa_name = os.path.join(input_dir, f_sherpa_name)
+    fin_name = os.path.join(input_dir, fin_name)
     ps = Ploter("Internal", 139)
 
     ## read in files
@@ -36,6 +54,7 @@ if __name__ == "__main__":
 
     ## prepare histograms
     prefix_sherpa = 'smearHist_reweight_{}'
+    #prefix_sherpa = 'DYHist_{}'
     prefix_powHeg = 'smearHist_reweight_{}'
     prefix_data = 'dataHist_fillWin_{}'
     prefix_fullSim = 'bkgHist_{}'
@@ -68,7 +87,15 @@ if __name__ == "__main__":
         h3 = fin.Get(prefix_powHeg.format(icat))
         h4 = fin.Get(prefix_fullSim.format(icat))
         hists = [h1, h2, h3, h4]
-        for hist in hists:
+
+        start_bin = h1.GetXaxis().FindBin(110)
+        end_bin = h1.GetXaxis().FindBin(160)
+        data_yield = h1.Integral(start_bin, end_bin)
+        for ih,hist in enumerate(hists):
+            if ih==1:
+                start = hist.FindBin(110)
+                end = hist.FindBin(160)
+                hist.Scale(data_yield/hist.Integral(start, end))
             hist.Rebin(20)
             hist.GetXaxis().SetRangeUser(110, 160)
 
