@@ -75,7 +75,7 @@ if __name__ == "__main__":
                 itask += 1
                 continue
 
-        cmd =['/global/homes/x/xju/code/powheginlinegen/apps/smearing_on_peak', '-i', file_name, '-o', out_name, '-s', str(job_idx+7*rank)]
+        cmd =['/global/homes/x/xju/code/powheginlinegen/apps/smearing_on_peak', '-i', file_name, '-o', out_name]
         if len(tasks) < n_workers:
             job_id = threading.Thread(target=subprocess.call, kwargs={"args":cmd})
             job_id.start()

@@ -266,10 +266,9 @@ if __name__ == '__main__':
     # read in all events, use multi-threads only if events > 10 M
     # multi-threads here seem provide no help...
     if n_workers > 1 and neventTotal > 10000000:
-        even = neventTotal//n_workers
-        event_info_list = []
         print("{} workers, each work on {} events".format(n_workers, even))
 
+        even = neventTotal//n_workers
         ithread = 0
         threads = []
         while ithread < n_workers-1:
@@ -277,9 +276,9 @@ if __name__ == '__main__':
             stop = even*(1+ithread)
             print("start {} and stop {}".format(start, stop))
             x = read_partial_events(file_name, tree_name,
-                                       branches, None,
-                                       start, stop,
-                                       models, transformers)
+                                    branches, None,
+                                    start, stop,
+                                    models, transformers)
             threads.append(x)
             ithread += 1
             time.sleep(1)
