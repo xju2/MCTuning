@@ -44,11 +44,6 @@ add_executable(testMadGraph testMadGraph.cxx)
 target_link_libraries(testMadGraph pythia8)
 
 
-# check LHAupLHEF
-add_executable(testLHEF testLHEF.cxx)
-target_link_libraries(testLHEF pythia8 z)
-
-
 # UMEPS merging
 add_executable(main86 main86.cxx)
 target_link_libraries(main86 pythia8 z HepMC)
