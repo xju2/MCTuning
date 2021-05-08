@@ -76,7 +76,7 @@ int main(int argc, char** argv)
   // pythia->readString("Beams:frameType = 4");
   // pythia->readString("Beams:LHEF = amcatnlorun/events.lhe.gz");
 
-  LHAupMadgraph* amcatnlo = new LHAupMadgraph(pythia, true, "amcatnlorun", "mg5_aMC");
+  shared_ptr<LHAupMadgraph> amcatnlo = make_shared<LHAupMadgraph>(pythia, true, "amcatnlorun", "mg5_aMC");
 
   //an array of inputs...
   std::ifstream input(argv[1]);
@@ -87,7 +87,7 @@ int main(int argc, char** argv)
   }
   for(auto s: vconf) amcatnlo->readString(s);
 
-  pythia->setLHAupPtr(amcatnlo);
+  pythia->setLHAupPtr((LHAupPtr) amcatnlo);
   run(pythia, amPtZ, 1000);
   delete pythia;
 
