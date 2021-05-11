@@ -54,8 +54,8 @@ int main(int argc, char** argv)
 
 	// Create an LHAup object that can access relevant information in pythia.
 	// LHAupFromPYTHIA8 myLHA(&pythia.process, &pythia.info);
-	LHEF3FromPythia8 myLHA(&pythia.event, &pythia.settings, &pythia.info,
-    &pythia.particleData);
+	// LHEF3FromPythia8 myLHA(&pythia.event, &pythia.settings, &pythia.info, &pythia.particleData);
+	LHEF3FromPythia8 myLHA(&pythia.event, &pythia.info);
 
 	// Open a file on which LHEF events should be stored, and write header.
 	myLHA.openLHEF(argv[2]);
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 	int iAbort = 0;
 	for(int iEvent = 0; iEvent < nEvent; ++iEvent)
 	{
-		pythia.info.LHEFversionSave = 3;
+		// pythia.info.LHEFversionSave = 3;
 
 		// generate event
 		if(!pythia.next()) {

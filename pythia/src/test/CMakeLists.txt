@@ -43,7 +43,6 @@ target_link_libraries(testPythia8235MultiWeights pythia8 HepMC)
 add_executable(testMadGraph testMadGraph.cxx)
 target_link_libraries(testMadGraph pythia8)
 
-
 # UMEPS merging
 add_executable(main86 main86.cxx)
 target_link_libraries(main86 pythia8 z HepMC)
@@ -55,3 +54,7 @@ target_link_libraries(main85 pythia8 z HepMC)
 # Multiweights in pythia
 add_executable(main37 main37.cxx)
 target_link_libraries(main37 pythia8 z HepMC)
+
+# EvtGen + Pythia
+add_executable(main48 main48.cxx)
+target_link_libraries(main48 pythia8 z HepMC EvtGen EvtGenExternal)

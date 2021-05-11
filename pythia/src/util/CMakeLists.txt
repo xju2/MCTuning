@@ -30,6 +30,10 @@ add_executable(pythia_shower_lhe3 pythia_shower_lhe3.cxx)
 set_target_properties(pythia_shower_lhe3 PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(pythia_shower_lhe3 pythia8 HepMC)
 
+# pythia for showering and evtGen for fragmentation 
+add_executable(pythia_evtgen_shower_lhe3 pythia_evtgen_shower_lhe3.cxx)
+target_link_libraries(pythia_evtgen_shower_lhe3 pythia8 HepMC EvtGen EvtGenExternal)
+
 # pythia showering on LHEF with merging 
 add_executable(pythia_shower_ckkwL_merging pythia_shower_ckkwL_merging.cxx)
 set_target_properties(pythia_shower_ckkwL_merging PROPERTIES LINKER_LANGUAGE CXX)
